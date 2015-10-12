@@ -1,0 +1,10 @@
+
+UC 01 : Creer un livre
+Date : 05/10/2015
+Acteur : Auteur
+Pré-condition : néant
+Scénario nominale
+
+1 -> l'auteur sélectionne "Créer Livre"
+2 -> le système affiche une fenêtre de saisie de nom du livre
+ 
