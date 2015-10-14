@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <synch.h>
 #include <sched.h>
 #include <proc.h>
@@ -14,16 +15,6 @@
  */
 int tsleep(int pri, void *obs) {
   // TME - completer
-  int p = GetElecProc();
-  if (p == -1) {
-    printf("tsleep - no current process\n");
-    exit(1);
-  }
-   Tproc[p].p_flag = SLEEP;
-   Tproc[p].p_pri = pri;
-   Tproc[p].p_ptr = obs;
-   commut(NULL);
-  
   return 0;
 }
 
@@ -35,21 +26,6 @@ int tsleep(int pri, void *obs) {
  */
 int twakeup(void *obs) {
   // TME - completer
-  struct proc *p;
-  int wake = 0;
-  for( p = &Tproc[0]; p < &Tproc[MAXPROC+1]; p++){
-    if(p->p_ptr == obs){
-      p->p_flag = RUN;
-      p->p_ptr = 0;
-      if(p->p_pri < Tproc[getfid()].p_pri){
-	wake = 1;
-	break;
-      }
-    }
-  }
-  
-   if(wake)
-    commut(NULL);
   return 0;
 }
 
