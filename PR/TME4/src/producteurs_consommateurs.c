@@ -35,7 +35,7 @@ char pop() {
 	return c;
 }
 
-void *thread_producteur(void *arg) {
+void *thread_create(void *arg) {
 	PRODUCTEUR
 	return NULL;
 }
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
 	/* producteurs*/
 	for (i = 0; i < nb_thread_producteurs; i++) {
 
-		if (pthread_create(&tid_producteurs[i], NULL, thread_producteur, NULL)
+		if (pthread_create(&tid_producteurs[i], NULL, thread_create, NULL)
 				!= 0) {
 			perror("pthread_create \n");
 			exit(1);

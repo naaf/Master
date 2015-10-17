@@ -1,0 +1,12 @@
+le nombre total de Threads créées est 3 par l’exécution de cette fonction appelée par une première Thread avec la valeur 1, et max vaut 3
+
+L1----------|-----------|
+			|			|
+			L2			L2
+			
+
+Formule Générale nb threads créés à  LVLn = nbThread(LVLn-1) * LVL 
+ou
+soit LVLi la valeur de premiére thread appelant alors
+
+LVLn = LVLn! / LVLi!

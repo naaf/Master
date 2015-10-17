@@ -37,7 +37,7 @@ char pop() {
 	return c;
 }
 
-void *thread_producteur(void *arg) {
+void *thread_create(void *arg) {
 	PRODUCTEUR
 	return NULL;
 }
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
 	sem_init(&sem_libre, 0, TAILLE);
 	sem_init(&sem_occupe, 0, 0);
 
-	if (pthread_create(&tid[0], NULL, thread_producteur, NULL) != 0) {
+	if (pthread_create(&tid[0], NULL, thread_create, NULL) != 0) {
 		perror("pthread_create \n");
 		exit(1);
 	}
