@@ -17,7 +17,7 @@ struct message {
 
 void remonte_ipc(int nb_fils) {
 	printf("pere %d \n", getpid());
-	int i, val_rand;
+	int i, val_rand, result = 0;
 	for (i = 0; i < nb_fils; i++) {
 		switch (fork()) {
 		case 0: /* fils*/
@@ -27,6 +27,14 @@ void remonte_ipc(int nb_fils) {
 			msg.val_rand = val_rand;
 			msgsnd(msg_id, &msg, sizeof(int), 0);
 			printf("fils pid %d ==> %d\n", getpid(), val_rand);
+
+			for (i = 0; i < indice_fils; i++) {
+				msgrcv(msg_id, &msgs[indice_fils], sizeof(int), sizeof(int), 0);
+				printf("msg%d recu %d \n", i, msg.val_rand);
+				result += msg.val_rand;
+			}
+			printf("fils %d : la somme est %d \n", indice_fils, result);
+
 			exit(EXIT_SUCCESS);
 			break;
 		default:/* pere*/
@@ -60,25 +68,6 @@ int main(int argc, char* argv[]) {
 	/* creation processus	*/
 	/*------------------------------------------------------*/
 	nb_fils = atoi(argv[1]);
-	/*
-	 printf("pere %d \n", getpid());
-	 for (i = 0; i < nb_fils; i++) {
-	 switch (fork()) {
-	 case 0:
-	 srand(getpid());
-	 val_rand = (int) (10 * (float) rand() / RAND_MAX);
-	 msg.type = sizeof(int);
-	 msg.val_rand = val_rand;
-	 msgsnd(msg_id, &msg, sizeof(int), 0);
-	 printf("fils pid %d ==> %d\n", getpid(), val_rand);
-	 exit(EXIT_SUCCESS);
-	 break;
-	 default:
-
-	 break;
-	 }
-	 }
-	 */
 	remonte_ipc(nb_fils);
 	/*------------------------------------------------------*/
 	/* traitement liberation msg	*/
@@ -89,7 +78,8 @@ int main(int argc, char* argv[]) {
 		printf("msg%d recu %d \n", i, msg.val_rand);
 		result += msg.val_rand;
 	}
-	printf("pere %d : la somme est %d \n", getpid(), result);
+
+	printf("pere %d : End \n", getpid());
 	msgctl(msg_id, IPC_RMID, NULL);
 
 	return EXIT_SUCCESS;
