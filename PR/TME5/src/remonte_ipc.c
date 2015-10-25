@@ -1,4 +1,4 @@
-#define SVID_SOURCE 1
+#define _SVID_SOURCE 1
 
 #include<stdio.h>
 #include<stdlib.h>
@@ -14,10 +14,12 @@ struct message {
 	long type;
 	int val_rand;
 } msg;
+pid_t *tab_pid;
 
 void remonte_ipc(int nb_fils) {
 	printf("pere %d \n", getpid());
-	int i, val_rand, result = 0;
+	int i = 0, val_rand = 0;
+
 	for (i = 0; i < nb_fils; i++) {
 		switch (fork()) {
 		case 0: /* fils*/
@@ -27,14 +29,6 @@ void remonte_ipc(int nb_fils) {
 			msg.val_rand = val_rand;
 			msgsnd(msg_id, &msg, sizeof(int), 0);
 			printf("fils pid %d ==> %d\n", getpid(), val_rand);
-
-			for (i = 0; i < indice_fils; i++) {
-				msgrcv(msg_id, &msgs[indice_fils], sizeof(int), sizeof(int), 0);
-				printf("msg%d recu %d \n", i, msg.val_rand);
-				result += msg.val_rand;
-			}
-			printf("fils %d : la somme est %d \n", indice_fils, result);
-
 			exit(EXIT_SUCCESS);
 			break;
 		default:/* pere*/
@@ -42,9 +36,10 @@ void remonte_ipc(int nb_fils) {
 			break;
 		}
 	}
+
 }
 int main(int argc, char* argv[]) {
-	int nb_fils, i, val_rand;
+	int nb_fils, i;
 	key_t cle;
 
 	if (argc < 2) {
@@ -72,14 +67,18 @@ int main(int argc, char* argv[]) {
 	/*------------------------------------------------------*/
 	/* traitement liberation msg	*/
 	/*------------------------------------------------------*/
+	/* attendre la fin de tous les fils*/
+	for(i = 0 ; i < nb_fils; i++){
+		wait(NULL);
+	}
 	int result = 0;
 	for (i = 0; i < nb_fils; i++) {
 		msgrcv(msg_id, &msg, sizeof(int), sizeof(int), 0);
-		printf("msg%d recu %d \n", i, msg.val_rand);
+		printf("pere msg%d recu ==> %d \n", i, msg.val_rand);
 		result += msg.val_rand;
 	}
 
-	printf("pere %d : End \n", getpid());
+	printf("pere %d : somme %d  \n", getpid(),result);
 	msgctl(msg_id, IPC_RMID, NULL);
 
 	return EXIT_SUCCESS;

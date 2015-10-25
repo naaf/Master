@@ -28,14 +28,14 @@ void prepareP(int sem_type) {
 
 	op[sem_type].sem_num = sem_type;
 	op[sem_type].sem_op = -1;
-	op[sem_type].sem_flg = SEM_UNDO;
+	op[sem_type].sem_flg = 0;
 }
 
 void prepareV(int sem_type) {
 
 	op[sem_type].sem_num = sem_type;
 	op[sem_type].sem_op = 1;
-	op[sem_type].sem_flg = SEM_UNDO;
+	op[sem_type].sem_flg = 0;
 }
 
 void push(char c) {
@@ -48,7 +48,8 @@ void push(char c) {
 	prepareP(SEM_MUTEX);
 	semop(sem_id, &op[SEM_MUTEX], 1);
 	adr_stack[p_int[0]] = c;
-
+	printf("===>push %d, sem_occupe %d\n", p_int[0],
+			semctl(sem_id, SEM_OCCUPE, GETVAL, 0));
 	p_int[0] += 1;
 
 	prepareV(SEM_MUTEX);
@@ -61,7 +62,8 @@ void push(char c) {
 
 char pop() {
 	char c;
-
+	printf("=================>entre pop, sem_occupe %d\n",
+			semctl(sem_id, SEM_OCCUPE, GETVAL, 0));
 	prepareP(SEM_OCCUPE);
 	semop(sem_id, &op[SEM_OCCUPE], 1);
 
@@ -72,7 +74,7 @@ char pop() {
 	semop(sem_id, &op[SEM_MUTEX], 1);
 	p_int[0] -= 1;
 	c = adr_stack[p_int[0]];
-
+	printf("===>pop %d\n", p_int[0]);
 	prepareV(SEM_MUTEX);
 	semop(sem_id, &op[SEM_MUTEX], 1);
 
@@ -151,14 +153,14 @@ int main(int argc, char* argv[]) {
 	p_int = (int*) adr_att;
 	p_int[0] = 0; /* ps pointer stack*/
 
-	printf(" libre = %d occupe = %d \n", semctl(sem_id, SEM_LIBRE, GETVAL, 0),
-			semctl(sem_id, SEM_OCCUPE, GETVAL, 0));
+	printf(" libre = %d occupe = %d sem_mutex %d\n", semctl(sem_id, SEM_LIBRE, GETVAL, 0),
+			semctl(sem_id, SEM_OCCUPE, GETVAL, 0),semctl(sem_id, SEM_MUTEX, GETVAL, 0));
 
 	nfork(nb_producteur, 1);
 	nfork(nb_consommateur, 0);
 
 	signal(SIGINT, handler);
 	pause();
-
+	printf("sortie de pause\n");
 	return EXIT_SUCCESS;
 }
