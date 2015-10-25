@@ -1,5 +1,5 @@
 #			Programmation Repartie (4I400)
-#		Makefile pour TD 5. Introduction à la communication inter-processus (IPC)
+#		Makefile pour TM 5. Introduction aux sémaphores
 
 
 # Documentation: http://www.gnu.org/software/make/manual/make.html
@@ -20,20 +20,14 @@ O=
 
 
 .PHONY: all clean test
-all: $(BIN)remonte_ipc $(BIN)remonte_partagee $(BIN)multi_remonte $(BIN)multi_remonte_file_unique
-test: test-remonte_ipc test-remonte_partagee test-multi_remonte test-multi_remonte_file_unique
+all: $(BIN)wait_barrier $(BIN)prod_conso_partagees
+test: test-wait_barrier test-prod_conso_partagees
 
-test-remonte_ipc: $(BIN)remonte_ipc
-	-bin/remonte_ipc 4
+test-wait_barrier: $(BIN)wait_barrier
+	-bin/wait_barrier 4
 
-test-remonte_partagee: $(BIN)remonte_partagee
-	-bin/remonte_partagee 4
-
-test-multi_remonte: $(BIN)multi_remonte
-	-bin/multi_remonte 4
-
-test-multi_remonte_file_unique: $(BIN)multi_remonte_file_unique
-	-bin/multi_remonte_file_unique 4
+test-prod_conso_partagees: $(BIN)prod_conso_partagees
+	-echo "123456789" | bin/prod_conso_partagees 5 3
 
 
 clean: 

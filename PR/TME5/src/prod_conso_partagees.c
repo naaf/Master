@@ -8,13 +8,13 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <signal.h>
-#include "producteur_consommateur.h"
+#include "../include/producteur_consommateur.h"
 
 #define SHM_TAILLE 104
 #define SEM_TAILLE 3
-#define SEM_MUTEX 0
-#define SEM_VIDE 1
-#define SEM_PLEIN 2
+#define SEM_OCCUPE 0
+#define SEM_MUTEX 1
+#define SEM_LIBRE 2
 
 char *adr_att;
 char* adr_stack;
@@ -22,59 +22,62 @@ int *p_int;
 int shm_id;
 
 int sem_id;
-struct sembuf op[1];
+struct sembuf op[SEM_TAILLE];
 
-void preparePS0P(int sem_type) {
-	/* PS0*/
-	op[SEM_MUTEX].sem_num = 0;
-	op[SEM_MUTEX].sem_op = -1;
-	op[SEM_MUTEX].sem_flg = SEM_UNDO;
-	/* PS? */
-	op[sem_type].sem_num = 0;
+void prepareP(int sem_type) {
+
+	op[sem_type].sem_num = sem_type;
 	op[sem_type].sem_op = -1;
 	op[sem_type].sem_flg = SEM_UNDO;
 }
-void prepareVSOV(int sem_type) {
-	/* VS0*/
-	op[SEM_MUTEX].sem_num = 0;
-	op[SEM_MUTEX].sem_op = 1;
-	op[SEM_MUTEX].sem_flg = SEM_UNDO;
-	/* PS? */
-	op[sem_type].sem_num = 0;
+
+void prepareV(int sem_type) {
+
+	op[sem_type].sem_num = sem_type;
 	op[sem_type].sem_op = 1;
 	op[sem_type].sem_flg = SEM_UNDO;
 }
 
 void push(char c) {
 
-	prepareP(SEM_PLEIN);
-	semop(sem_id, &op[SEM_PLEIN], 1);
+	prepareP(SEM_LIBRE);
+	semop(sem_id, &op[SEM_LIBRE], 1);
+	p_int = (int*) adr_att;
+	adr_stack = (adr_att + sizeof(int));
 
 	prepareP(SEM_MUTEX);
 	semop(sem_id, &op[SEM_MUTEX], 1);
-	p_int = (int*) adr_att;
-	adr_stack = (adr_att + sizeof(int));
 	adr_stack[p_int[0]] = c;
+
 	p_int[0] += 1;
 
 	prepareV(SEM_MUTEX);
 	semop(sem_id, &op[SEM_MUTEX], 1);
 
+	prepareV(SEM_OCCUPE);
+	semop(sem_id, &op[SEM_OCCUPE], 1);
+
 }
 
 char pop() {
 	char c;
-	prepareP(SEM_MUTEX);
-	semop(sem_id, &op[SEM_MUTEX], 1);
 
+	prepareP(SEM_OCCUPE);
+	semop(sem_id, &op[SEM_OCCUPE], 1);
 
 	adr_stack = (adr_att + sizeof(int));
 	p_int = (int*) adr_att;
-	c = adr_stack[p_int[0]];
+
+	prepareP(SEM_MUTEX);
+	semop(sem_id, &op[SEM_MUTEX], 1);
 	p_int[0] -= 1;
+	c = adr_stack[p_int[0]];
 
 	prepareV(SEM_MUTEX);
 	semop(sem_id, &op[SEM_MUTEX], 1);
+
+	prepareV(SEM_LIBRE);
+	semop(sem_id, &op[SEM_LIBRE], 1);
 	return c;
 }
 
@@ -137,12 +140,19 @@ int main(int argc, char* argv[]) {
 		perror("semget");
 		exit(1);
 	}
-	unsigned short arg[SEM_TAILLE] = { 1, 0, SHM_TAILLE - sizeof(int) };
+	unsigned short arg[SEM_TAILLE];
+	arg[SEM_MUTEX] = 1;
+	arg[SEM_OCCUPE] = 0;
+	arg[SEM_LIBRE] = SHM_TAILLE - sizeof(int);
+
 	semctl(sem_id, SEM_TAILLE, SETALL, arg);
 
 	adr_att = shmat(shm_id, NULL, 0600);
 	p_int = (int*) adr_att;
 	p_int[0] = 0; /* ps pointer stack*/
+
+	printf(" libre = %d occupe = %d \n", semctl(sem_id, SEM_LIBRE, GETVAL, 0),
+			semctl(sem_id, SEM_OCCUPE, GETVAL, 0));
 
 	nfork(nb_producteur, 1);
 	nfork(nb_consommateur, 0);
