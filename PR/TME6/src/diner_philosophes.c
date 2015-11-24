@@ -61,7 +61,7 @@ void depose(int id_philo) {
 void process(int id_philo) {
 	int i = 0;
 	if ((adr_att = mmap(NULL, taille, PROT_READ | PROT_WRITE,
-	MAP_SHARED, shm_id, 0)) == -1) {
+	MAP_SHARED, shm_id, 0)) == MAP_FAILED) {
 		perror("mmap");
 		exit(-1);
 	}

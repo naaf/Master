@@ -19,7 +19,7 @@ msg file_principal;
 int msg_id;
 int nb_fils;
 int TYPE_MAIN;
-void remonte_ipc() {
+void nfork() {
 
 	int indice_fils;
 	int i, val_rand =0 , result = 0;
@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
 	/*------------------------------------------------------*/
 	/* creation processus	*/
 	/*------------------------------------------------------*/
-	remonte_ipc();
+	nfork();
 	/*------------------------------------------------------*/
 	/* traitement liberation msg	*/
 	/*------------------------------------------------------*/
@@ -86,24 +86,20 @@ int main(int argc, char* argv[]) {
 	int index = 0;
 	printf("pere %d, nb_fils %d \n", getpid(), nb_fils);
 	for (i = 0; i < nb_fils; i++) {
-		printf("boucle%d \n", i);
 		msgrcv(msg_id, &file_principal, sizeof(int)*2, TYPE_MAIN, 0);
 		index = file_principal.emetteur;
 		printf("pere recu :  msgs%d ==> %d \n", index, file_principal.val_rand);
 
 		for (j = 0; j < file_principal.val_rand; j++) {
 			val_rand = (int) (10 * (float) rand() / RAND_MAX);
-			printf("%d, ", val_rand);
 			file_principal.type = index;
 			file_principal.val_rand = val_rand;
 			file_principal.emetteur = TYPE_MAIN;
 			msgsnd(msg_id, &file_principal, sizeof(int)* 2, 0);
 		}
 
-		printf("\n");
 	}
 
-	printf("pere %d : END\n", getpid());
 	msgctl(msg_id, IPC_RMID, NULL);
 
 	return EXIT_SUCCESS;

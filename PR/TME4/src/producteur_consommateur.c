@@ -7,13 +7,13 @@
 #include <semaphore.h>
 #include "../include/producteur_consommateur.h"
 
-#define TAILLE 100
+#define SHM_TAILLE 100
 #define NB_THREAD 2
 
-int stack_size;
+int ps;
 
 
-char stack[TAILLE];
+char stack[SHM_TAILLE];
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 sem_t sem_libre;
 sem_t sem_occupe;
@@ -21,7 +21,7 @@ sem_t sem_occupe;
 void push(char c) {
 	sem_wait(&sem_libre);
 	pthread_mutex_lock(&mutex);
-	stack[++stack_size] = c;
+	stack[++ps] = c;
 	pthread_mutex_unlock(&mutex);
 	sem_post(&sem_occupe);
 
@@ -31,7 +31,7 @@ char pop() {
 	char c;
 	sem_wait(&sem_occupe);
 	pthread_mutex_lock(&mutex);
-	c = stack[stack_size--];
+	c = stack[ps--];
 	pthread_mutex_unlock(&mutex);
 	sem_post(&sem_libre);
 	return c;
@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 	pthread_t tid[NB_THREAD];
 	int i;
 
-	sem_init(&sem_libre, 0, TAILLE);
+	sem_init(&sem_libre, 0, SHM_TAILLE);
 	sem_init(&sem_occupe, 0, 0);
 
 	if (pthread_create(&tid[0], NULL, thread_create, NULL) != 0) {

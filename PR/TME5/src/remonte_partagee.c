@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 char *adr_att;
-int *p_int;
+int *tab_fourchette;
 int shm_id;
 
 void remonte_partagee(int nb_fils) {
@@ -26,12 +26,12 @@ void remonte_partagee(int nb_fils) {
 				perror("shmat");
 				exit(-1);
 			}
-			p_int = (int*) adr_att;
-			p_int[indice_fils] = val_rand;
+			tab_fourchette = (int*) adr_att;
+			tab_fourchette[indice_fils] = val_rand;
 			printf("fils %d, pid %d ==> %d\n", indice_fils, getpid(), val_rand);
 
 			if (indice_fils == nb_fils) {
-				p_int[0] = -1;
+				tab_fourchette[0] = -1;
 			}
 			shmdt(adr_att);
 			exit(EXIT_SUCCESS);
@@ -81,23 +81,23 @@ int main(int argc, char* argv[]) {
 		perror("shmat");
 		exit(-1);
 	}
-	p_int = (int*) adr_att;
-	p_int[0] = 0;
+	tab_fourchette = (int*) adr_att;
+	tab_fourchette[0] = 0;
 
 	/*------------------------------------------------------*/
 	/* traitement liberation memoir partage	*/
 	/*------------------------------------------------------*/
 	remonte_partagee(nb_fils);
-	while (p_int[0] == 0) {
-		printf("attend while %d \n", p_int[0]);
+	while (tab_fourchette[0] == 0) {
+		printf("attend while %d \n", tab_fourchette[0]);
 		sleep(1);
 	}
 
 	int result = 0;
 	for (i = 1; i < nb_fils + 1; i++) {
 
-		printf("shm%d recu %d \n", i, p_int[i]);
-		result += p_int[i];
+		printf("shm%d recu %d \n", i, tab_fourchette[i]);
+		result += tab_fourchette[i];
 	}
 	printf("pere %d : la somme est %d \n", getpid(), result);
 	shmdt(adr_att);

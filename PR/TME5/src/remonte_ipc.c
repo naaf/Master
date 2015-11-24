@@ -14,9 +14,8 @@ struct message {
 	long type;
 	int val_rand;
 } msg;
-pid_t *tab_pid;
 
-void remonte_ipc(int nb_fils) {
+void nfork(int nb_fils) {
 	printf("pere %d \n", getpid());
 	int i = 0, val_rand = 0;
 
@@ -63,7 +62,7 @@ int main(int argc, char* argv[]) {
 	/* creation processus	*/
 	/*------------------------------------------------------*/
 	nb_fils = atoi(argv[1]);
-	remonte_ipc(nb_fils);
+	nfork(nb_fils);
 	/*------------------------------------------------------*/
 	/* traitement liberation msg	*/
 	/*------------------------------------------------------*/

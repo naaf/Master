@@ -19,7 +19,7 @@ msg *msgs;
 int msg_id;
 int nb_fils;
 
-void remonte_ipc() {
+void nfork() {
 
 	int indice_fils;
 	int i, val_rand = 0, result = 0;
@@ -37,12 +37,11 @@ void remonte_ipc() {
 			for (i = 0; i < val_rand; i++) {
 				msgrcv(msg_id, &msgs[indice_fils], sizeof(int) * 2, sizeof(int),
 						0);
-				printf("fils msg%d recu %d \n", indice_fils,
-						msgs[indice_fils].val_rand);
+
 				result += msgs[indice_fils].val_rand;
 			}
 
-			printf("fils %d : la somme est %d \n", indice_fils, result);
+			printf("fils %d : la somme ==> %d \n", indice_fils, result);
 
 			exit(EXIT_SUCCESS);
 			break;
@@ -79,32 +78,28 @@ int main(int argc, char* argv[]) {
 	/*------------------------------------------------------*/
 	/* creation processus	*/
 	/*------------------------------------------------------*/
-	remonte_ipc();
+	nfork();
 	/*------------------------------------------------------*/
 	/* traitement liberation msg	*/
 	/*------------------------------------------------------*/
 	int j = 0;
 	int index = 0;
-	printf("pere %d, nb_fils %d \n", getpid(), nb_fils);
 	for (i = 0; i < nb_fils; i++) {
-		printf("boucle%d \n", i);
+
 		msgrcv(msg_id, &msgs[nb_fils], 8, 1L, 0);
 		index = msgs[nb_fils].emetteur;
 		printf("pere recu :  msgs%d ==> %d \n", index, msgs[nb_fils].val_rand);
 
 		for (j = 0; j < msgs[nb_fils].val_rand; j++) {
 			val_rand = (int) (10 * (float) rand() / RAND_MAX);
-			printf("%d, ", val_rand);
 			msgs[index].type = sizeof(int);
 			msgs[index].val_rand = val_rand;
 			msgs[index].emetteur = nb_fils;
+			printf("pere to fils%d ==> %d \n", index, val_rand);
 			msgsnd(msg_id, &msgs[index], sizeof(int) * 2, 0);
 		}
-
-		printf("\n");
 	}
 
-	printf("pere %d : END\n", getpid());
 	free(msgs);
 	msgctl(msg_id, IPC_RMID, NULL);
 
