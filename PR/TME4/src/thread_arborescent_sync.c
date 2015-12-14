@@ -15,7 +15,7 @@ pthread_cond_t sync_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t sync_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t nbT_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void* thread_func(void* arg) {
+void* func_ecoute(void* arg) {
 
 	pthread_mutex_lock(&nbT_mutex);
 	nbThreads++;
@@ -42,7 +42,7 @@ void* thread_func(void* arg) {
 		*param = nb;
 		tid = calloc(nb, sizeof(pthread_t));
 		for (i = 0; i < nb; i++) {
-			pthread_create((tid + i), 0, thread_func, param);
+			pthread_create((tid + i), 0, func_ecoute, param);
 		}
 		for (i = 0; i < nb; i++)
 			pthread_join(tid[i], NULL);
@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
 		perror("pthread_sigmask");
 		exit(1);
 	}
-	if (pthread_create(&tid, NULL, thread_func, (void*) &i) != 0) {
+	if (pthread_create(&tid, NULL, func_ecoute, (void*) &i) != 0) {
 		perror("pthread_create \n");
 		exit(1);
 	}

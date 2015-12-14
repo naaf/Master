@@ -1,5 +1,5 @@
 #			Programmation Repartie (4I400)
-#		Makefile pour TM 8. Socket et multi-diffusion
+#		Makefile pour TD 8. Socket et parallélisme
 
 
 # Documentation: http://www.gnu.org/software/make/manual/make.html
@@ -19,16 +19,16 @@ SRC=$(DIR)/src/
 HC=
 O=
 
-.PHONY: all clean test test-sonar test-mychat
-all: $(BIN)sonar $(BIN)mychat
+.PHONY: all clean test test-ftp_multi_serveur test-journal_serveur
+all: $(BIN)ftp_multi_serveur $(BIN)journal_serveur
 
-test: test-sonar test-mychat
+test: test-ftp_multi_serveur test-journal_serveur
 
-test-sonar: $(BIN)sonar
-	-$$PWD/bin/sonar
+test-ftp_multi_serveur: $(BIN)ftp_multi_serveur
+	-$$PWD/bin/ftp_multi_serveur 2000 /tmp &
 
-test-mychat: $(BIN)mychat
-	-$$PWD/bin/mychat 225.0.0.10 2001 $$USER
+test-journal_serveur: $(BIN)journal_serveur
+	-$$PWD/bin/journal_serveur 2820 2821 2822 2823 &
 
 clean: 
 	rm -rf $(OBJ)*.o $(BIN)*

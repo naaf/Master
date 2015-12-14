@@ -10,10 +10,10 @@
 #include <unistd.h>
 #include <signal.h>
 
-char *file;
+char *FILE;
 
 void handler(int sig) {
-	unlink(file);
+	unlink(FILE);
 }
 
 void process(const char *file) {
@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
 	signal(SIGINT, handler);
 	/* serveur */
 	nb_fils = atoi(argv[2]);
-	file = argv[1];
+	FILE = argv[1];
 
 	int result = 0;
 	int data = 0;
@@ -87,17 +87,17 @@ int main(int argc, char* argv[]) {
 
 	/* Create name. */
 	name.sun_family = AF_UNIX;
-	strcpy(name.sun_path, file);
+	strcpy(name.sun_path, FILE);
 
 	/* Bind the UNIX domain address to the created socket */
 	if (bind(sock, (struct sockaddr *) &name, sizeof(struct sockaddr_un))) {
 		perror("binding name to datagram socket");
 		exit(1);
 	}
-	printf("socket -->%s\n", file);
+	printf("socket -->%s\n", FILE);
 
 	/* fils */
-	nfork(nb_fils, file);
+	nfork(nb_fils, FILE);
 
 	/* Read from the socket */
 	for (i = 0; i < nb_fils; i++) {
@@ -111,6 +111,6 @@ int main(int argc, char* argv[]) {
 	printf("pere %d : somme %d  \n", getpid(), result);
 
 	close(sock);
-	unlink(file);
+	unlink(FILE);
 	return EXIT_SUCCESS;
 }
