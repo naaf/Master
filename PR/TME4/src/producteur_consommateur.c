@@ -15,11 +15,11 @@ int ps;
 
 char stack[SHM_TAILLE];
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-sem_t sem_libre;
+sem_t sem_var;
 sem_t sem_occupe;
 
 void push(char c) {
-	sem_wait(&sem_libre);
+	sem_wait(&sem_var);
 	pthread_mutex_lock(&mutex);
 	stack[++ps] = c;
 	pthread_mutex_unlock(&mutex);
@@ -33,7 +33,7 @@ char pop() {
 	pthread_mutex_lock(&mutex);
 	c = stack[ps--];
 	pthread_mutex_unlock(&mutex);
-	sem_post(&sem_libre);
+	sem_post(&sem_var);
 	return c;
 }
 
@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 	pthread_t tid[NB_THREAD];
 	int i;
 
-	sem_init(&sem_libre, 0, SHM_TAILLE);
+	sem_init(&sem_var, 0, SHM_TAILLE);
 	sem_init(&sem_occupe, 0, 0);
 
 	if (pthread_create(&tid[0], NULL, thread_create, NULL) != 0) {

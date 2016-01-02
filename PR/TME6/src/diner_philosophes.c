@@ -19,7 +19,7 @@ sem_t *sem_mutex;
 sem_t **sem_philoblock;
 
 char *adr_att;
-int *tab_fourchette;
+int *tab_val_random;
 int shm_id;
 int taille = 0;
 
@@ -32,11 +32,11 @@ void prepare_mange(int id_philo) {
 	int peut_mange = 0;
 	do {
 		sem_wait(sem_mutex);
-		if (tab_fourchette[BAG_GAUCHE] == 0
-				&& tab_fourchette[BAG_PHILO_DROITE] == 0) {
+		if (tab_val_random[BAG_GAUCHE] == 0
+				&& tab_val_random[BAG_PHILO_DROITE] == 0) {
 
-			tab_fourchette[BAG_GAUCHE] = 1;
-			tab_fourchette[BAG_PHILO_DROITE] = 1;
+			tab_val_random[BAG_GAUCHE] = 1;
+			tab_val_random[BAG_PHILO_DROITE] = 1;
 			peut_mange = 1;
 			sem_post(sem_mutex);
 
@@ -51,8 +51,8 @@ void prepare_mange(int id_philo) {
 void depose(int id_philo) {
 
 	sem_wait(sem_mutex);
-	tab_fourchette[BAG_GAUCHE] = 0;
-	tab_fourchette[BAG_PHILO_DROITE] = 0;
+	tab_val_random[BAG_GAUCHE] = 0;
+	tab_val_random[BAG_PHILO_DROITE] = 0;
 	sem_post(&sem_philoblock[BAG_PHILO_DROITE]);
 	sem_post(&sem_philoblock[PHILO_GAUCHE]);
 	sem_post(sem_mutex);
@@ -65,7 +65,7 @@ void process(int id_philo) {
 		perror("mmap");
 		exit(-1);
 	}
-	tab_fourchette = (int*) adr_att;
+	tab_val_random = (int*) adr_att;
 
 	for (i = 0; i < cycle; i++) {
 		printf("C%d : philo%d pense\n", i, id_philo);
@@ -137,10 +137,10 @@ int main(int argc, char* argv[]) {
 		exit(-1);
 	}
 
-	tab_fourchette = (int*) adr_att;
+	tab_val_random = (int*) adr_att;
 
 	for (i = 0; i < nb_philo; i++) {
-		tab_fourchette[i] = 0;
+		tab_val_random[i] = 0;
 	}
 
 	nfork(nb_philo);

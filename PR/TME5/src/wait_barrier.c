@@ -66,7 +66,11 @@ int main(int argc, char* argv[]) {
 
 	key_t cle;
 	char code = 0;
-	code = getpid() & 255;
+
+	/*------------------------------------------------------*/
+	/* creation semaphore	*/
+	/*------------------------------------------------------*/
+	code = (char) getpid();
 	if (code == 0) {
 		exit(1);
 	}
@@ -79,13 +83,16 @@ int main(int argc, char* argv[]) {
 		exit(1);
 	}
 
+	/*initialisation de la semaphore*/
 	semctl(sem_id, 0, SETVAL, nb_fils);
+
 	nfork(nb_fils);
 
 	while (semctl(sem_id, 0, GETVAL, 0) > 0) {
 		sleep(1);
 	}
 
+	/*liberation  de la semaphore*/
 	semctl(sem_id, 0, IPC_RMID, 0);
 	return EXIT_SUCCESS;
 }

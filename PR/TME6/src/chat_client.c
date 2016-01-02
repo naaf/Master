@@ -30,16 +30,20 @@ void *thread_lecture(void *arg) {
 	struct message* request;
 	int shm_id;
 
+	/** creation exclusif  **/
 	if ((shm_id = shm_open(shmcli_nom, O_CREAT | O_EXCL | O_RDWR, 0600))
 			== -1) {
 		perror("shm_open");
 		exit(-1);
 	}
+
+	/** alloucation **/
 	if (ftruncate(shm_id, LENGTH_SHM) == -1) {
 		perror("ftruncate");
 		exit(-1);
 	}
 
+	/** attachement **/
 	if ((p_shm = (struct myshm*) mmap(NULL, LENGTH_SHM, PROT_READ | PROT_WRITE,
 	MAP_SHARED, shm_id, 0)) == MAP_FAILED) {
 		perror("mmap");

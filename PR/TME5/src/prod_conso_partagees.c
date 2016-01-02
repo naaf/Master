@@ -18,7 +18,7 @@
 
 char *adr_att;
 char* adr_stack;
-int *tab_fourchette;
+int *tab_val_random;
 int shm_id;
 
 int sem_id;
@@ -42,15 +42,15 @@ void push(char c) {
 
 	prepareP(SEM_LIBRE);
 	semop(sem_id, &op[SEM_LIBRE], 1);
-	tab_fourchette = (int*) adr_att;
+	tab_val_random = (int*) adr_att;
 	adr_stack = (adr_att + sizeof(int));
 
 	prepareP(SEM_MUTEX);
 	semop(sem_id, &op[SEM_MUTEX], 1);
-	adr_stack[tab_fourchette[0]] = c;
-	printf("===>push %d, sem_occupe %d\n", tab_fourchette[0],
+	adr_stack[tab_val_random[0]] = c;
+	printf("===>push %d, sem_occupe %d\n", tab_val_random[0],
 			semctl(sem_id, SEM_OCCUPE, GETVAL, 0));
-	tab_fourchette[0] += 1;
+	tab_val_random[0] += 1;
 
 	prepareV(SEM_MUTEX);
 	semop(sem_id, &op[SEM_MUTEX], 1);
@@ -68,13 +68,13 @@ char pop() {
 	semop(sem_id, &op[SEM_OCCUPE], 1);
 
 	adr_stack = (adr_att + sizeof(int));
-	tab_fourchette = (int*) adr_att;
+	tab_val_random = (int*) adr_att;
 
 	prepareP(SEM_MUTEX);
 	semop(sem_id, &op[SEM_MUTEX], 1);
-	tab_fourchette[0] -= 1;
-	c = adr_stack[tab_fourchette[0]];
-	printf("===>pop %d\n", tab_fourchette[0]);
+	tab_val_random[0] -= 1;
+	c = adr_stack[tab_val_random[0]];
+	printf("===>pop %d\n", tab_val_random[0]);
 	prepareV(SEM_MUTEX);
 	semop(sem_id, &op[SEM_MUTEX], 1);
 
@@ -150,8 +150,8 @@ int main(int argc, char* argv[]) {
 	semctl(sem_id, SEM_TAILLE, SETALL, arg);
 
 	adr_att = shmat(shm_id, NULL, 0600);
-	tab_fourchette = (int*) adr_att;
-	tab_fourchette[0] = 0; /* ps pointer stack*/
+	tab_val_random = (int*) adr_att;
+	tab_val_random[0] = 0; /* ps pointer stack*/
 
 	printf(" libre = %d occupe = %d sem_mutex %d\n", semctl(sem_id, SEM_LIBRE, GETVAL, 0),
 			semctl(sem_id, SEM_OCCUPE, GETVAL, 0),semctl(sem_id, SEM_MUTEX, GETVAL, 0));
