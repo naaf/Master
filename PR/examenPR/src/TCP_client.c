@@ -15,25 +15,25 @@
 char requete[256];
 char reponse[256];
 
-void listFiles_cli(int sock) {
+void listFiles_cli(int sc_cnx) {
 	printf("requete %s \n", requete);
 	/* envois */
-	if (write(sock, requete, sizeof(requete)) == -1) {
+	if (write(sc_cnx, requete, sizeof(requete)) == -1) {
 		perror("write");
 		exit(1);
 	}
 	/* reponse */
-	if (read(sock, reponse, sizeof(reponse)) == -1) {
+	if (read(sc_cnx, reponse, sizeof(reponse)) == -1) {
 		perror("read");
 		exit(1);
 	}
 	printf("Reponse : %s\n", reponse);
 }
 
-void upload_cli(int sock) {
+void upload_cli(int sc_cnx) {
 	printf("srv  requete %s \n", requete);
 
-	if (write(sock, requete, sizeof(requete)) == -1) {
+	if (write(sc_cnx, requete, sizeof(requete)) == -1) {
 		perror("read");
 		exit(1);
 	}
@@ -41,7 +41,7 @@ void upload_cli(int sock) {
 	printf("nom de fichier >>> ");
 	fscanf(stdin, "%s", requete);
 
-	if (write(sock, requete, sizeof(requete)) == -1) {
+	if (write(sc_cnx, requete, sizeof(requete)) == -1) {
 		perror("read");
 		exit(1);
 	}
@@ -53,7 +53,7 @@ void upload_cli(int sock) {
 	memset(requete, 0, 256);
 	while (read(f, requete, sizeof(requete)) > 0) {
 		printf("r : %s\n", requete);
-		if (write(sock, requete, sizeof(requete)) == -1) {
+		if (write(sc_cnx, requete, sizeof(requete)) == -1) {
 			perror("read");
 			exit(1);
 		}
@@ -61,10 +61,10 @@ void upload_cli(int sock) {
 	close(f);
 
 }
-void download_cli(int sock) {
+void download_cli(int sc_cnx) {
 	printf("srv  requete %s \n", requete);
 
-	if (write(sock, requete, sizeof(requete)) == -1) {
+	if (write(sc_cnx, requete, sizeof(requete)) == -1) {
 		perror("read");
 		exit(1);
 	}
@@ -72,12 +72,12 @@ void download_cli(int sock) {
 	printf("nom de fichier >>> ");
 	fscanf(stdin, "%s", requete);
 
-	if (write(sock, requete, sizeof(requete)) == -1) {
+	if (write(sc_cnx, requete, sizeof(requete)) == -1) {
 		perror("read");
 		exit(1);
 	}
 
-	if (read(sock, requete, sizeof(requete)) == -1) {
+	if (read(sc_cnx, requete, sizeof(requete)) == -1) {
 		perror("read");
 		exit(1);
 	}
@@ -94,7 +94,7 @@ void download_cli(int sock) {
 
 	printf("telechargement\n");
 	memset(requete, 0, 256);
-	while (read(sock, requete, sizeof(requete)) > 0) {
+	while (read(sc_cnx, requete, sizeof(requete)) > 0) {
 		printf("r : %s\n", requete);
 		if (write(f, requete, sizeof(requete)) == -1) {
 			perror("read");

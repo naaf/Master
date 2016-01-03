@@ -23,6 +23,8 @@
 
 #define N_SOCKET 4
 
+int VRAI = 1;
+
 int creer_socket(int port) {
 	int sc;
 	struct sockaddr_in sin;
@@ -36,17 +38,11 @@ int creer_socket(int port) {
 	sin.sin_family = AF_INET;
 	/* nommage */
 	if (bind(sc, (struct sockaddr *) &sin, sizeof(sin)) < 0) {
+		printf("sc_attente %d \n", port);
 		perror("bind");
 		exit(1);
 	}
 	return sc;
-}
-
-int VRAI = 1;
-
-void handler(int s) {
-	printf("exit server\n");
-	VRAI = 0;
 }
 
 int main(int argc, char* argv[]) {
@@ -55,62 +51,84 @@ int main(int argc, char* argv[]) {
 		printf("error syntaxe : %s nbPort nbPort nbPort nbPort \n", argv[0]);
 		exit(1);
 	}
+
 	int PORTSERV[N_SOCKET];
 	int socket_attentes[N_SOCKET];
-	fd_set mselect;
-	int plg_desc = -1;
+	int sc_com; /* Socket de communication */
+	struct sockaddr_in dest; /* Nom de la socket distante */
+	int fromlen = sizeof(dest);
 
-	int socket_cnx; /* Socket de communication */
-	struct sockaddr_in sc_from; /* Nom de la socket distante */
-	int sc_from_len = sizeof(sc_from);
+	fd_set mselect;
+	int max_desc = -1;
 
 	int i;
 	for (i = 1; i <= N_SOCKET; i++)
 		PORTSERV[i - 1] = atoi(argv[i]);
 
+	/** Mise à zéro de l'ensemble **/
 	FD_ZERO(&mselect);
 
-	/* creation de la socket et ecoute sur la socket*/
+	/* creation de la socket et ajoute à l'ensemble*/
 	for (i = 0; i < N_SOCKET; i++) {
 		socket_attentes[i] = creer_socket(PORTSERV[i]);
 		listen(socket_attentes[i], 5);
-		FD_SET(socket_attentes[i], &mselect);
-		if (plg_desc < socket_attentes[i]) {
-			plg_desc = socket_attentes[i];
-		}
-		printf("test plg_desc %d \n", plg_desc);
-	}
 
-	printf("%s >>>\n", argv[0]);
+		/** Ajoute un descripteur à l'ensemble**/
+		FD_SET(socket_attentes[i], &mselect);
+		if (max_desc < socket_attentes[i]) {
+			max_desc = socket_attentes[i];
+		}
+		printf("test max_desc %d \n", max_desc);
+	}
 
 	FILE* file;
 	if ((file = fopen("cx.log", "w")) == NULL) {
 		perror("fopen");
 	}
 
-	signal(SIGINT, handler);
-
 	while (VRAI) {
 
-		if (select(plg_desc + 1, &mselect, NULL, NULL, NULL) <= 0) {
+		/**Attente simultanée sur l'ensembles de descripteurs**/
+		if (select(max_desc + 1, &mselect, NULL, NULL, NULL) <= 0) {
 			perror("select");
 			break;
 		}
-		printf("select interrompu \n");
+
+		struct sockaddr_in info_local;
+		socklen_t len = sizeof(info_local);
+
+		/**traitement des cnx**/
 		for (i = 0; i < N_SOCKET; ++i) {
+
+			/** Teste si un descripteur est dans l'ensemble **/
 			if (FD_ISSET(socket_attentes[i], &mselect)) {
+
 				/* Etablir la connexion */
-				if ((socket_cnx = accept(socket_attentes[i],
-						(struct sockaddr *) &sc_from, &sc_from_len)) == -1) {
+				if ((sc_com = accept(socket_attentes[i],
+						(struct sockaddr *) &dest, &fromlen)) == -1) {
 					perror("accept");
 					exit(2);
 				}
-				/******** Traitement *********/
-				fprintf(stdout, "IP = %s,  \n", inet_ntoa(sc_from.sin_addr));
-				fprintf(file, "IP = %s  \n", inet_ntoa(sc_from.sin_addr));
+
+				/*********** Traitement ***********/
+
+				fprintf(file, "IP = %s  port => %d \n",
+						inet_ntoa(dest.sin_addr), dest.sin_port);
+				/**get info client**/
+				printf("CLIENT IP = %s,port = %d \n", inet_ntoa(dest.sin_addr),
+						dest.sin_port);
+
+				/**get info  srv**/
+				if (getsockname(sc_com, (struct sockaddr *) &info_local, &len)
+						== -1) {
+					perror("getsockname");
+				}
+				printf("SRV IP = %s,port = %d \n", inet_ntoa(info_local.sin_addr),
+						ntohs(info_local.sin_port));
+
 				/* Fermer la connexion */
-				shutdown(socket_cnx, 2);
-				close(socket_cnx);
+				shutdown(sc_com, 2);
+				close(sc_com);
 			}
 		}
 

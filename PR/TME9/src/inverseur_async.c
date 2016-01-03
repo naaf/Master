@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#define NB_FILS 10
+#define BUF_SIZE 10
 
 int main(int argc, char *argv[]) {
 
@@ -24,11 +24,11 @@ int main(int argc, char *argv[]) {
 	int desc_source;
 	int desc_dest;
 
-	struct aiocb cb_ecr[NB_FILS];
-	struct aiocb * lio[NB_FILS];
+	struct aiocb cb_ecr[BUF_SIZE];
+	struct aiocb * lio[BUF_SIZE];
 	struct sigevent lio_sigev;
 
-	char buffer[NB_FILS] = { 0 };
+	char buffer[BUF_SIZE] = { 0 };
 
 	if ((desc_source = open(source_file, O_RDONLY | 0666)) < 0) {
 		perror("open source_file");
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	int i;
-	for (i = 0; i < NB_FILS; ++i) {
+	for (i = 0; i < BUF_SIZE; ++i) {
 		/**  init l'ecriture **/
 		cb_ecr[i].aio_fildes = desc_dest;
 		cb_ecr[i].aio_lio_opcode = LIO_WRITE;
@@ -53,12 +53,12 @@ int main(int argc, char *argv[]) {
 	lio_sigev.sigev_notify = SIGEV_NONE;
 	long int octet_lus = 0;
 	int nb_tour = 0;
-	while ((octet_lus = read(desc_source, buffer, NB_FILS)) > 0) {
+	while ((octet_lus = read(desc_source, buffer, BUF_SIZE)) > 0) {
 		printf("buffer lu %ld \n", octet_lus);
 		for (i = 0; i < octet_lus; ++i) {
 			printf("%c \n", buffer[octet_lus - i - 1]);
 			cb_ecr[i].aio_buf = &buffer[octet_lus - i - 1];
-			cb_ecr[i].aio_offset = nb_tour * NB_FILS + i;
+			cb_ecr[i].aio_offset = nb_tour * BUF_SIZE + i;
 			lio[i] = &cb_ecr[i];
 		}
 		if (lio_listio(LIO_WAIT, lio, octet_lus, &lio_sigev) < 0) {

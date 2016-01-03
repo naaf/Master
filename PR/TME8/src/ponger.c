@@ -6,7 +6,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#define PORTSERV 9990
+#define PORT_SRV 9990
 #define PONG "PONG"
 
 int main(int argc, char *argv[]) {
@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
 	memset((char *) &addr_ponger, 0, sizeof(addr_ponger));
 	addr_ponger.sin_addr.s_addr = htonl(INADDR_ANY);
 	addr_ponger.sin_family = AF_INET;
-	addr_ponger.sin_port = htons(PORTSERV);
+	addr_ponger.sin_port = htons(PORT_SRV);
 
 	if (bind(socket_cli, (struct sockaddr *) &addr_ponger, sizeof(addr_ponger))
 			< 0) {

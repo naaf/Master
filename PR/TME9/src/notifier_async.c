@@ -12,9 +12,10 @@
 #include <string.h>
 
 #define SIGNAL_ECR (SIGRTMIN + 3)
-#define SIGNAL_LEC (SIGRTMIN + 4)
-#define NB_FILS 256
 
+#define BUF_SIZE 256
+
+/** handler sig rt**/
 void gest_ecr(int signum, siginfo_t * info, void * vide) {
 	struct aiocb * cb;
 	ssize_t nb_octets;
@@ -27,35 +28,22 @@ void gest_ecr(int signum, siginfo_t * info, void * vide) {
 	}
 }
 
-void gest_lec(int signum, siginfo_t * info, void * vide) {
-	struct aiocb * cb;
-	ssize_t nb_octets;
-	if (info->si_code == SI_ASYNCIO) {
-		cb = info->si_value.sival_ptr;
-		if (aio_error(cb) == EINPROGRESS)
-			return;
-		nb_octets = aio_return(cb);
-		fprintf(stdout, "lec 1 : %ld octets lus \n", nb_octets);
-		printf("lu %s \n", (char*) cb->aio_buf);
-	}
-}
-
 int main(int argc, char *argv[]) {
 
 	if (argc != 3) {
 		printf("error syntaxe :%s contenant.txt contenu \n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
-	struct aiocb cb_ecr;
-	struct aiocb cb_lec;
 	const char* file = argv[1];
 	char* contenu = argv[2];
+
+	struct aiocb cb_ecr;
+	struct aiocb cb_lec;
 	int desc_ecr;
 	int desc_lec;
 
-	char buffer[NB_FILS] = { 0 };
+	char buffer[BUF_SIZE] = { 0 };
 	struct sigaction action_ecr;
-	struct sigaction action_lec;
 	sigset_t mask;
 
 	if ((desc_ecr = open(file, O_CREAT | O_RDWR | O_TRUNC, 0666)) < 0) {
@@ -84,13 +72,6 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	action_lec.sa_flags = SA_SIGINFO;
-	action_lec.sa_sigaction = gest_lec;
-	if (sigaction(SIGNAL_LEC, &action_lec, NULL) < 0) {
-		perror("sigaction");
-		exit(EXIT_FAILURE);
-	}
-
 	printf("contenu %s size : %ld\n", contenu, sizeof(char));
 	/* Lancement de l'ecriture */
 	if (aio_write(&cb_ecr) < 0) {
@@ -105,6 +86,7 @@ int main(int argc, char *argv[]) {
 
 	sigemptyset(&mask);
 	sigsuspend(&mask);
+	printf("fin ecriture \n");
 
 	/** init lecture*/
 	cb_lec.aio_fildes = desc_lec;
@@ -115,16 +97,30 @@ int main(int argc, char *argv[]) {
 	cb_lec.aio_nbytes = sizeof(buffer);
 	cb_lec.aio_reqprio = 0;
 
-	cb_lec.aio_sigevent.sigev_notify = SIGEV_SIGNAL;
-	cb_lec.aio_sigevent.sigev_signo = SIGNAL_LEC;
-	cb_lec.aio_sigevent.sigev_value.sival_ptr = &cb_lec;
+	cb_lec.aio_sigevent.sigev_notify = SIGEV_NONE;
+
 	/* Lancement de lecture */
 	if (aio_read(&cb_lec) < 0) {
-		perror("aio_write");
+		perror("aio_read");
 		exit(EXIT_FAILURE);
 	}
 
-	sigsuspend(&mask);
+	/** attente fin lecture suspend ***/
+
+	struct aiocb * lio[1];
+	ssize_t nb_octets = 0;
+	lio[0] = &cb_lec;
+	if (aio_suspend(lio, 1, NULL) == 0) {
+		if (aio_error(lio[0]) == EINPROGRESS) {
+			printf("operation encours\n");
+			return 0;
+		}
+		nb_octets = aio_return(lio[0]);
+		printf("Lus 1 : %ld octets ecrit \n", nb_octets);
+		char *s = (char *) lio[0]->aio_buf;
+		printf("lu %s \n", s);
+
+	}
 
 	close(desc_ecr);
 	close(desc_lec);

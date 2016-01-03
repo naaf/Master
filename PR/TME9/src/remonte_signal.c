@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#define NB_FILS 4
+#define BUF_SIZE 4
 #define SIGNAL_BARRIERE (SIGRTMIN + 8)
 int result = 0;
 int pid_pere;

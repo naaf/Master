@@ -8,7 +8,7 @@
 
 int main(int argc, char *argv[]) {
 
-	struct sockaddr_in sin; /* address du serveur */
+	struct sockaddr_in local; /* address du serveur */
 	struct sockaddr_in dest; /* address dest */
 	char host[64];
 	int sc;
@@ -29,18 +29,19 @@ int main(int argc, char *argv[]) {
 	int PORTSERV;
 	PORTSERV = atoi(argv[1]);
 
-	/* remplir le « nom » */
-	memset((char *) &sin, 0, sizeof(sin));
-	sin.sin_addr.s_addr = htonl(INADDR_ANY);
-	sin.sin_port = htons(PORTSERV);
-	sin.sin_family = AF_INET;
+	/*** init address propre ***/
+	memset((char *) &local, 0, sizeof(local));
+	local.sin_addr.s_addr = htonl(INADDR_ANY);
+	local.sin_port = htons(PORTSERV);
+	local.sin_family = AF_INET;
 
 	/* nommage */
-	if (bind(sc, (struct sockaddr *) &sin, sizeof(sin)) < 0) {
+	if (bind(sc, (struct sockaddr *) &local, sizeof(local)) < 0) {
 		perror("bind");
 		exit(2);
 	}
 
+	/****** TRAITEMENT *********/
 	printf("serveur env >>>\n");
 	char requete;
 	char identificateur[256];

@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#define NB_FILS 256
+#define BUF_SIZE 256
 
 int main(int argc, char *argv[]) {
 
@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 	int desc_lec;
 	struct aiocb * lio[1];
 
-	char buffer[NB_FILS] = { 0 };
+	char buffer[BUF_SIZE] = { 0 };
 
 	if ((desc_ecr = open(file, O_CREAT | O_RDWR | O_TRUNC, 0666)) < 0) {
 		perror("open");

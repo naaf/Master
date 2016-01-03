@@ -13,7 +13,7 @@
 #include <time.h>
 
 #define SIGNAL_ECR (SIGRTMIN + 5)
-#define NB_FILS 256
+#define BUF_SIZE 256
 static const int VAL_TV_NSEC = 50;
 
 char* file;
@@ -24,9 +24,16 @@ void gest_ecr(int signum, siginfo_t * info, void * vide) {
 	ssize_t nb_octets;
 	int desc_lec;
 	cb = info->si_value.sival_ptr;
-	if (aio_error(cb) == EINPROGRESS)
+	if (aio_error(cb) == EINPROGRESS) {
+		printf("l'opération est en cours ... \n");
 		return;
-	nb_octets = aio_return(cb);
+	}
+
+	if ((nb_octets = aio_return(cb)) != cb->aio_nbytes) {
+		/* Traitement d’erreur */
+		printf("Erreur de nb_octets ... \n");
+	}
+	/* Réussite */
 	printf("Ecr 1 : %ld octets ecrit \n", nb_octets);
 
 	/** partie lecture**/
@@ -35,7 +42,7 @@ void gest_ecr(int signum, siginfo_t * info, void * vide) {
 		exit(EXIT_FAILURE);
 	}
 
-	char buffer[NB_FILS] = { 0 };
+	char buffer[BUF_SIZE] = { 0 };
 	read(desc_lec, buffer, nb_octets);
 	printf("lus %s \n", buffer);
 
@@ -51,6 +58,7 @@ int main(int argc, char *argv[]) {
 		printf("error syntaxe :%s contenant.txt contenu \n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
+
 	struct aiocb cb_ecr;
 	struct aiocb cb_lec;
 	file = argv[1];
@@ -58,7 +66,6 @@ int main(int argc, char *argv[]) {
 	int desc_ecr;
 	int desc_lec;
 
-	char buffer[NB_FILS] = { 0 };
 	struct sigaction action_ecr;
 	struct sigaction action_lec;
 	sigset_t mask;
@@ -78,6 +85,7 @@ int main(int argc, char *argv[]) {
 
 	cb_ecr.aio_sigevent.sigev_notify = SIGEV_NONE;
 
+
 	/** lier gest_ecr avec action_ecr et action_lec**/
 
 	action_ecr.sa_flags = SA_SIGINFO;
@@ -87,7 +95,6 @@ int main(int argc, char *argv[]) {
 		perror("sigaction SIGNAL_ECR");
 		exit(EXIT_FAILURE);
 	}
-
 
 	/* Lancement de l'ecriture */
 	if (aio_write(&cb_ecr) < 0) {
@@ -104,14 +111,17 @@ int main(int argc, char *argv[]) {
 	sev.sigev_signo = SIGNAL_ECR;
 	sev.sigev_value.sival_ptr = &cb_ecr;
 
+	/***creation temporisateur ***/
 	if (timer_create(CLOCK_REALTIME, &sev, &timerid) == -1)
 		perror("timer_create");
 
+	/*** init temporisateur ***/
 	its.it_value.tv_sec = 0;
 	its.it_value.tv_nsec = VAL_TV_NSEC;
 	its.it_interval.tv_sec = its.it_value.tv_sec;
 	its.it_interval.tv_nsec = its.it_value.tv_nsec;
 
+	/***Armement de temporisateur ***/
 	if (timer_settime(timerid, 0, &its, NULL) == -1)
 		perror("timer_settime");
 

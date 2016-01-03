@@ -7,7 +7,7 @@
 #include <netdb.h>
 #include <signal.h>
 
-#define PORTSERV 9999
+#define PORT_SRV 9999
 #define PING "PING"
 
 
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
 	/* remplir addr srv */
 	memset((char *) &addr_srv, 0, sizeof(addr_srv));
 	addr_srv.sin_addr.s_addr = htonl(INADDR_ANY);
-	addr_srv.sin_port = htons(PORTSERV);
+	addr_srv.sin_port = htons(PORT_SRV);
 	addr_srv.sin_family = AF_INET;
 
 	/* nommage */

@@ -19,11 +19,11 @@
 #include <string.h>
 
 #define SIGNAL_BARRIERE (SIGRTMIN + 7)
-#define NB_FILS 4
+#define BUF_SIZE 4
 
 int nb_fils;
 int nb_fils_wait = 1;
-int tab_pid[NB_FILS] = { 0 };
+int tab_pid[BUF_SIZE] = { 0 };
 
 void gest_barriere(int signum, siginfo_t * info, void * vide) {
 	tab_pid[nb_fils_wait] = info->si_value.sival_int;

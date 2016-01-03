@@ -82,10 +82,10 @@ void upload_srv(int sock) {
 
 }
 
-void download_srv(int sock) {
+void download_srv(int scom) {
 	printf("srv  requete %s \n", requete);
 
-	if (read(sock, requete, sizeof(requete)) == -1) {
+	if (read(scom, requete, sizeof(requete)) == -1) {
 		perror("read");
 		exit(1);
 	}
@@ -98,19 +98,19 @@ void download_srv(int sock) {
 	int f;
 	if ((f = open(name, O_RDONLY, 0600)) == -1) {
 		perror("open");
-		if (write(sock, "ERROR", sizeof("ERROR")) == -1) {
+		if (write(scom, "ERROR", sizeof("ERROR")) == -1) {
 			perror("write");
 		}
 		exit(1);
 	}
 
-	if (write(sock, requete, sizeof(requete)) == -1) {
+	if (write(scom, requete, sizeof(requete)) == -1) {
 		perror("write");
 		exit(1);
 	}
 	memset(requete, 0, 256);
 	while (read(f, requete, sizeof(requete)) > 0) {
-		if (write(sock, requete, sizeof(requete)) == -1) {
+		if (write(scom, requete, sizeof(requete)) == -1) {
 			perror("read");
 			exit(1);
 		}
@@ -198,7 +198,7 @@ int main(int argc, char* argv[]) {
 			break;
 		case -1:
 			perror("fork");
-			return -1;
+			exit(EXIT_FAILURE);
 			break;
 		default: /* père */
 			close(scom);

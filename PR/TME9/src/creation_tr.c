@@ -1,6 +1,6 @@
 #define _SVID_SOURCE 1
-
 #define _XOPEN_SOURCE 700
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -12,11 +12,11 @@
 #include <unistd.h>
 #include <string.h>
 
-#define NB_FILS 4
+#define BUF_SIZE 4
 
 #define SIGNAL_PRINT (SIGRTMIN + 4)
 
-int tab_pid[NB_FILS] = { 0 };
+int tab_pid[BUF_SIZE] = { 0 };
 int nb_fils;
 
 void gest(int signum, siginfo_t * info, void * vide) {

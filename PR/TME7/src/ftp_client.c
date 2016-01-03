@@ -19,6 +19,7 @@ int main(int argc, char *argv[]) {
 		printf("error syntaxe : %s 127.0.0.1 2000 \n", argv[0]);
 		exit(1);
 	}
+	/****/
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		perror("socket");
 		exit(1);

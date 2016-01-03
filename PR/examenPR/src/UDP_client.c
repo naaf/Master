@@ -29,13 +29,14 @@ int main(int argc, char *argv[]) {
 	/** init dest address**/
 	memset((char *) &dest, 0, sizeof(dest));
 	if (inet_aton(ip, &(dest.sin_addr)) == 0) {
-		fprintf(stdout, "invalide \n");
-		exit(2);
+		perror("inet_aton init dest address");
+		exit(EXIT_FAILURE);
 	}
 	dest.sin_family = AF_INET;
 	dest.sin_port = htons(PORTSERV);
 
-	/*** traitement ***/
+	/****** TRAITEMENT *********/
+
 	char message[256];
 	char reponse[256];
 	int boucle = 1;

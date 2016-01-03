@@ -17,7 +17,7 @@
  est-il nécessaire de synchroniser les fils entre eux pour que les écritures se fassent correctement ? OUI
  */
 
-#define NB_FILS 4
+#define BUF_SIZE 4
 
 #define FILE "remonte_async.txt"
 
@@ -88,14 +88,14 @@ int main(int argc, char* argv[]) {
 		printf("error syntaxe : %s  4 \n", argv[0]);
 		exit(1);
 	}
-	struct aiocb cb_lec[NB_FILS];
-	struct aiocb * lio[NB_FILS];
+	struct aiocb cb_lec[BUF_SIZE];
+	struct aiocb * lio[BUF_SIZE];
 	struct sigevent lio_sigev;
 
 	int nb_fils = atoi(argv[1]);
 	int result = 0;
 	int desc = 0;
-	int buffer[NB_FILS] = { 0 };
+	int buffer[BUF_SIZE] = { 0 };
 
 	if ((desc = open(FILE, O_CREAT | O_RDWR | O_TRUNC, 0666)) <= 0) {
 		perror("open");
