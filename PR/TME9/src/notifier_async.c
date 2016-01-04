@@ -63,8 +63,7 @@ int main(int argc, char *argv[]) {
 	cb_ecr.aio_sigevent.sigev_signo = SIGNAL_ECR;
 	cb_ecr.aio_sigevent.sigev_value.sival_ptr = &cb_ecr;
 
-	/** lier gest_ecr avec action_ecr et action_lec**/
-
+	/** lier gest_ecr avec action_ecr **/
 	action_ecr.sa_flags = SA_SIGINFO;
 	action_ecr.sa_sigaction = gest_ecr;
 	if (sigaction(SIGNAL_ECR, &action_ecr, NULL) < 0) {

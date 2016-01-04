@@ -20,29 +20,36 @@ int tab_pid[BUF_SIZE] = { 0 };
 int nb_fils;
 
 void gest(int signum, siginfo_t * info, void * vide) {
-	printf("sig recu\n");
+	printf("sig recu du %d\n",info->si_pid);
 }
 
 void process(int rang) {
 	sigset_t mask;
 	sigemptyset(&mask);
+
+	/** vars sig rt**/
 	union sigval valeur;
 	struct sigaction action;
 
+	/** attache handler au sig**/
 	action.sa_sigaction = gest;
 	action.sa_flags = SA_SIGINFO;
 	sigemptyset(&action.sa_mask);
 	if (sigaction(SIGNAL_PRINT, &action, NULL) < 0)
 		fprintf(stderr, "SIGNAL_PRINT non intercepté \n");
 
-	if (rang != nb_fils - 1)
+	/** TRAITEMENT **/
+	if (rang != nb_fils - 1){
 		sigsuspend(&mask);
+	}
 
 	printf("mon rang : %d  pid : %d\n", rang, getpid());
 
+
+	/** envois sig rt**/
 	valeur.sival_int = 0;
 	if (rang != 0) {
-		printf("reveil %d\n", rang - 1);
+		printf("reveil du rang %d\n", rang - 1);
 		sigqueue(tab_pid[rang - 1], SIGNAL_PRINT, valeur);
 	}
 	printf("******************\n");
@@ -78,10 +85,10 @@ int main(int argc, char* argv[]) {
 	for (i = 0; i < nb_fils; i++) {
 		wait(NULL);
 	}
-	printf(" main \n");
 	for (i = 0; i < nb_fils; i++) {
 		printf("rang : %d  pid : %d, ", i, tab_pid[i]);
 	}
+	printf(" main \n");
 
 	return EXIT_SUCCESS;
 }

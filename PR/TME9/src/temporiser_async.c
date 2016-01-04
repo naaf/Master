@@ -14,7 +14,7 @@
 
 #define SIGNAL_ECR (SIGRTMIN + 5)
 #define BUF_SIZE 256
-static const int VAL_TV_NSEC = 50;
+static const int VAL_TV_NSEC = 25;
 
 char* file;
 int boucle;
@@ -67,7 +67,6 @@ int main(int argc, char *argv[]) {
 	int desc_lec;
 
 	struct sigaction action_ecr;
-	struct sigaction action_lec;
 	sigset_t mask;
 
 	if ((desc_ecr = open(file, O_CREAT | O_RDWR | O_TRUNC, 0666)) < 0) {
@@ -86,7 +85,7 @@ int main(int argc, char *argv[]) {
 	cb_ecr.aio_sigevent.sigev_notify = SIGEV_NONE;
 
 
-	/** lier gest_ecr avec action_ecr et action_lec**/
+	/** lier gest_ecr avec action_ecr **/
 
 	action_ecr.sa_flags = SA_SIGINFO;
 	action_ecr.sa_sigaction = gest_ecr;

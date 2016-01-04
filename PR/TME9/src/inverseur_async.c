@@ -21,15 +21,17 @@ int main(int argc, char *argv[]) {
 	}
 	const char* source_file = argv[1];
 	const char* dest_file = argv[2];
+
 	int desc_source;
 	int desc_dest;
 
-	struct aiocb cb_ecr[BUF_SIZE];
-	struct aiocb * lio[BUF_SIZE];
-	struct sigevent lio_sigev;
+	struct aiocb cb_ecr[BUF_SIZE]; /** bloc controle IO **/
+	struct aiocb * lio[BUF_SIZE]; /** liste des opérations IO à lancer **/
+	struct sigevent lio_sigev; /** événement à déclancher à la fin de toutes les opérations**/
 
 	char buffer[BUF_SIZE] = { 0 };
 
+	/** ouverture des fichiers **/
 	if ((desc_source = open(source_file, O_RDONLY | 0666)) < 0) {
 		perror("open source_file");
 		exit(EXIT_FAILURE);
@@ -50,9 +52,11 @@ int main(int argc, char *argv[]) {
 		cb_ecr[i].aio_sigevent.sigev_notify = SIGEV_NONE;
 	}
 
+	/** événement à déclancher à la fin de toutes les opérations**/
 	lio_sigev.sigev_notify = SIGEV_NONE;
 	long int octet_lus = 0;
 	int nb_tour = 0;
+
 	while ((octet_lus = read(desc_source, buffer, BUF_SIZE)) > 0) {
 		printf("buffer lu %ld \n", octet_lus);
 		for (i = 0; i < octet_lus; ++i) {
@@ -61,6 +65,8 @@ int main(int argc, char *argv[]) {
 			cb_ecr[i].aio_offset = nb_tour * BUF_SIZE + i;
 			lio[i] = &cb_ecr[i];
 		}
+
+		/*** lancer une suite d'AIOs ***/
 		if (lio_listio(LIO_WAIT, lio, octet_lus, &lio_sigev) < 0) {
 			perror("lio_listio");
 			exit(EXIT_FAILURE);
@@ -68,6 +74,7 @@ int main(int argc, char *argv[]) {
 		nb_tour++;
 	}
 
+	/**Fermeture des desc **/
 	close(desc_source);
 	close(desc_dest);
 	return EXIT_SUCCESS;
