@@ -1,0 +1,11 @@
+
+commencer par extraire l'archive tar -xvf aps.tar
+
+se place dans le répertoire aps
+
+Lancer la commande make pour compiler
+
+make clean pour supprimer 
+
+make test pour lancer le test
+
