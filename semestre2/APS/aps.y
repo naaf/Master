@@ -25,11 +25,11 @@ void display_tree(nodeType *p);
 
 %error-verbose
 %token<t_int>  NUM
-%token<t_string>  IDENT PROG
-%token  ADD SUB MUL DIV
+%token<t_string>  IDENT
+%token  ADD SUB MUL DIV 
 %token  NOT AND OR EQ LT 
 
-%token  VAR CONST SET IF WHILE
+%token  VAR CONST SET IF WHILE  PROG
 %token<t_string>  INT BOOL VOID
 %token<t_string>  FALSE TRUE
 
