@@ -13,14 +13,7 @@
 #include <string.h>
 #include "../headers/ricochet_robot.h"
 
-response_t parse(char* data) {
-	//TODO
-}
 
-char* encode(char* requete, response_t data) {
-	return NULL;
-	//TODO
-}
 
 char** string_to_arraystring(char* data, int* size, char separator) {
 	int i, cptLettre, lenght, pos;
@@ -61,9 +54,8 @@ void free_table(char** tab, int size) {
 	free(tab);
 }
 
-void add_user(char* name, int score) {
-//TODO
-}
-void remove_user(char* name) {
+
+response_t parse(char* data) {
 	//TODO
 }
+

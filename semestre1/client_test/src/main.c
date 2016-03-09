@@ -14,6 +14,15 @@
 int main(int argc, char** argv) {
 	int sc;
 	sc = connex_socket("127.0.0.1", 2016);
-	connex_session(sc, "Ashraf");
+
+	send_request(sc, 2, CONNEXION, "Ashraf");
+	read_response(sc);
+
+	send_request(sc, 3, SOLUTION, "Ashraf", "4");
+	read_response(sc);
+
+	send_request(sc, 3, SOLUTION, "Ashraf", "RDRHVDVHVDRB");
+	read_response(sc);
+
 	return EXIT_SUCCESS;
 }

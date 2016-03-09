@@ -11,27 +11,37 @@
 #define PORT_SRV 2016
 
 #define CONNEXION "CONNEXION"
+#define BIENVENUE "BIENVENUE"
+#define CONNECTE "CONNECTE"
 #define SORT "SORT"
-#define ENCHERE "ENCHERE"
+#define DECONNEXION "DECONNEXION"
+#define SESSION "SESSION"
+#define VAINQUEUR "VAINQUEUR"
+#define TOUR "TOUR"
 #define SOLUTION "SOLUTION"
+#define TUASTROUVE "TUASTROUVE"
+#define ILATROUVE "ILATROUVE"
+#define FINREFLEXION "FINREFLEXION"
+#define ENCHERE "ENCHERE"
+#define VALIDATION "VALIDATION"
+#define ECHEC "ECHEC"
+#define NOUVELLEENCHERE "NOUVELLEENCHERE"
+#define FINENCHERE "FINENCHERE"
+#define SASOLUTION "SASOLUTION"
+#define BONNE "BONNE"
+#define MAUVAISE "MAUVAISE"
+#define FINRESO "FINRESO"
+#define TROPLONG "TROPLONG"
+
+#define CHAT "CHAT"
+
 /**
  * connexion avec le serveur
  * return socket TCP
  */
 int connex_socket(char* addrIp, int port);
-
-
-
-/** Send method **/
-void connex_session(int socket, char* nameUser);
-void deconnex_session(int socket, char* nameUser);
-void tour_sendreflexion(int socket, char* user, int nbcoups);
-void enchere_sendcoups(int socket, char* user, int nbcoups);
-void tour_sendsolution(int socket, char* user, char* deplacements);
-
-
-
-
+void send_request(int sc, int argc, ...);
+char* read_response(int sc);
 
 /** receive method **/
 char* session_getresponse(int socket);
@@ -41,8 +51,5 @@ char* session_getbilan(int socket);
 char* reflexion_getresponse(int socket);
 char* enchere_getresponse(int socket);
 char* solution_getresponse(int socket);
-
-
-
 
 #endif /* COMMUNICATION_H_ */

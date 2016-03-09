@@ -8,16 +8,25 @@
 #ifndef RICOCHET_ROBOT_H
 #define RICOCHET_ROBOT_H
 
-#define CHMUR 0x0001 /* case mur haut*/
-#define CBMUR 0x0002 /* case mur bas*/
-#define CDMUR 0x0004 /* case mur droit*/
-#define CGMUR 0x0008 /* case mur gauche*/
-#define CROBOT 0x0010 /* case contient robot*/
-#define CSMUR 0x0020 /* case sans mur, case libre*/
+#define CHMUR 0x0001	/* case mur haut*/
+#define CBMUR 0x0002 	/* case mur bas*/
+#define CDMUR 0x0004 	/* case mur droit*/
+#define CGMUR 0x0008 	/* case mur gauche*/
+#define CROBOT 0x0010 	/* case contient robot*/
+#define CSMUR 0x0020	/* case sans mur, case libre*/
+
+#define CBILAN 	0x0010 	/* type bilan*/
+#define CENIGME 0x0002 	/* type enigme*/
+#define CDEP 	0x0004 	/* type deplacement*/
+#define CNAME 	0x0001 	/* type name */
+#define CNB_CP	0x0020 	/* type nb_coup*/
+#define CPLATE	0x0008 	/* type plateau*/
 
 typedef struct _list_user {
 	char* name;
-	int score;
+	char* score;
+	char* nb_coups;
+	char* solution;
 	struct _list_user *next;
 
 } list_user_t;
@@ -38,22 +47,36 @@ typedef enum {
 } Dirction;
 
 typedef struct {
-	char* username;
-	char* enigme;
+	int x;
+	int y;
+	Color c;
+} robot_t;
+
+typedef robot_t cible_t;
+
+typedef struct {
+	robot_t robots[4];
+	cible_t cible;
+}enigme_t;
+
+typedef struct {
 	int type;
+	char* username;
+	enigme_t enigme;
 	union {
 		char* deplacements;
 		plateau_t plateau;
 		bilan_t bilan;
-		int nb_coup;
+		char* nb_coup;
 	} content;
 } response_t;
 
 response_t parse(char* data);
-char* encode(char* requete, response_t data);
 char** string_to_arraystring(char* data, int* size, char separator);
 void free_table(char** tab, int size);
-void add_user(char* name, int score);
-void remove_user(char* name);
+
+void add_user(char* name, list_user_t users);
+void remove_user(char* name, list_user_t users);
+char* getuser(char* name, list_user_t users);
 
 #endif /* RICOCHET_ROBOT_H */

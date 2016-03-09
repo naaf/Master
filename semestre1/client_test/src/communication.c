@@ -13,6 +13,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <stdarg.h>
 #include "../headers/communication.h"
 
 int connex_socket(char* addrIp, int port) {
@@ -43,40 +44,47 @@ int connex_socket(char* addrIp, int port) {
 
 	return sock;
 }
-//TODO factorise creation de requete voir encode
-void connex_session(int socket, char* nameUser) {
-	char requete[256];
-	memset(requete, 0, 256);
-	strcat(requete, CONNEXION);
-	strcat(requete, "/");
-	strcat(requete, nameUser);
-	strcat(requete, "/");
-	if (write(socket, requete, strlen(requete)) == -1) {
+
+void send_request(int sc, int argc, ...) {
+	char requete[512];
+	memset(requete, 0, 512);
+
+	//construction de requete
+	int i;
+	va_list ap;
+	va_start(ap, argc);
+	for (i = 0; i < argc; i++) {
+		strcat(requete, va_arg(ap, char*));
+		strcat(requete, "/");
+	}
+	strcat(requete, "\n");
+	//send requete
+	if (write(sc, requete, strlen(requete)) == -1) {
 		perror("write");
 		exit(1);
 	}
+	fprintf(stderr, "send %s %d oct \n", requete, strlen(requete));
 }
 
-void deconnex_session(int socket, char* nameUser) {
-	char requete[256];
-	memset(requete, 0, 256);
-	strcat(requete, SORT);
-	strcat(requete, "/");
-	strcat(requete, nameUser);
-	strcat(requete, "/");
-	if (write(socket, requete, strlen(requete)) == -1) {
-		perror("write");
-		exit(1);
+char* read_response(int sc) {
+	char response[512];
+	memset(response, 0, 512);
+
+	char c;
+	int r, i = 0;
+	while (1) {
+		r = read(sc, &c, 1);
+		if (r == 0 || c == '\n')
+			break;
+		response[i++] = c;
 	}
+	response[i] = c;
+	int size = 0;
+	char **tab = NULL;
+	tab = string_to_arraystring(response, &size, '/');
+	for (i = 0; i < size; i++) {
+		printf("part%d : %s\n", i, tab[i]);
+	}
+
+	return NULL; //TODO
 }
-
-void tour_sendreflexion(int socket, char* user, int nbcoups) {
-
-}
-void enchere_sendcoups(int socket, char* user, int nbcoups) {
-
-}
-void tour_sendsolution(int socket, char* user, char* deplacements) {
-
-}
-
