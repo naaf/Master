@@ -22,6 +22,12 @@
 #define CNB_CP	0x0020 	/* type nb_coup*/
 #define CPLATE	0x0008 	/* type plateau*/
 
+#define NB_ROBOT 4
+#define ROBOT_B 0
+#define ROBOT_J 1
+#define ROBOT_R 2
+#define ROBOT_V 3
+
 typedef struct _list_user {
 	char* name;
 	char* score;
@@ -49,15 +55,18 @@ typedef enum {
 typedef struct {
 	int x;
 	int y;
-	Color c;
 } robot_t;
 
-typedef robot_t cible_t;
+typedef struct {
+	int x;
+	int y;
+	Color c;
+} cible_t;
 
 typedef struct {
 	robot_t robots[4];
 	cible_t cible;
-}enigme_t;
+} enigme_t;
 
 typedef struct {
 	int type;
