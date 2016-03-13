@@ -20,7 +20,7 @@ int fenet1() {
 			SDL_WINDOWPOS_UNDEFINED,           // initial y position
 			640,                               // width, in pixels
 			480,                               // height, in pixels
-			SDL_CreateWindow                  // flags - see below
+			SDL_WINDOW_SHOWN                // flags - see below
 			);
 
 	// Check that the window was successfully created
@@ -41,9 +41,14 @@ int fenet1() {
 	SDL_Quit();
 	return 0;
 }
+void aff() {
+	while (1) {
+		printf(".");
+		sleep(1);
+		fflush(stdout);
+	}
+}
 
 void ihm() {
-
 	fenet1();
-
 }
