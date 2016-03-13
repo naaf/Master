@@ -7,8 +7,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL2/SDL.h>
+#include "../headers/SDLS.h"
 #include "../headers/ihm.h"
 
+int fenet2() {
+	const int WIDTH = 640;
+	const int HEIGHT = 480;
+	SDL_Window *win = 0;
+	SDL_Renderer *ren = 0;
+
+	SDLS_init(WIDTH, HEIGHT, &win, &ren);
+	SDLS_affiche_image("assets/TUX Logo.bmp", ren, 0, 0);
+	SDL_Delay(9000);
+	SDL_DestroyRenderer(ren);
+	SDL_DestroyWindow(win);
+	SDL_Quit();
+	return 0;
+}
 int fenet1() {
 	SDL_Window *window;                    // Declare a pointer
 
@@ -31,8 +46,7 @@ int fenet1() {
 	}
 
 	// The window is open: could enter program loop here (see SDL_PollEvent())
-
-	SDL_Delay(3000);  // Pause execution for 3000 milliseconds, for example
+	SDL_Delay(9000);  // Pause execution for 3000 milliseconds, for example
 
 	// Close and destroy the window
 	SDL_DestroyWindow(window);
@@ -50,5 +64,5 @@ void aff() {
 }
 
 void ihm() {
-	fenet1();
+	fenet2();
 }

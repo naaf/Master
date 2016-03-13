@@ -4,6 +4,7 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../src/SDLS.c \
 ../src/communication.c \
 ../src/ihm.c \
 ../src/main.c \
@@ -11,6 +12,7 @@ C_SRCS += \
 ../src/test.c 
 
 OBJS += \
+./src/SDLS.o \
 ./src/communication.o \
 ./src/ihm.o \
 ./src/main.o \
@@ -18,6 +20,7 @@ OBJS += \
 ./src/test.o 
 
 C_DEPS += \
+./src/SDLS.d \
 ./src/communication.d \
 ./src/ihm.d \
 ./src/main.d \
