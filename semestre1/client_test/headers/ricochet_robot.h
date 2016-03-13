@@ -28,20 +28,27 @@
 #define ROBOT_R 2
 #define ROBOT_V 3
 
-typedef struct _list_user {
-	char* name;
-	char* score;
-	char* nb_coups;
-	char* solution;
-	struct _list_user *next;
+#define NAME_SIZE 256
 
+typedef struct _user {
+	char name[NAME_SIZE];
+	int score;
+	int nb_coups;
+	char* solution;
+	struct _user *next;
+
+} user_t;
+
+typedef struct {
+	int nb;
+	user_t* first;
 } list_user_t;
 
 typedef int plateau_t[16][16];
 
 typedef struct {
 	int current_tour;
-	list_user_t users;
+	list_user_t list_users;
 } bilan_t;
 
 typedef enum {
@@ -60,7 +67,7 @@ typedef struct {
 typedef struct {
 	int x;
 	int y;
-	Color c;
+	char c;
 } cible_t;
 
 typedef struct {
@@ -81,11 +88,17 @@ typedef struct {
 } response_t;
 
 response_t parse(char* data);
+void parse_plateau(char* data, plateau_t plateau);
+void parse_enigme(char* data, enigme_t *enig);
+void parse_bilan(char* data, bilan_t* bil);
+
 char** string_to_arraystring(char* data, int* size, char separator);
 void free_table(char** tab, int size);
 
-void add_user(char* name, list_user_t users);
-void remove_user(char* name, list_user_t users);
-char* getuser(char* name, list_user_t users);
+int adduser(char* name, list_user_t* list_users);
+int removeuser(char* name, list_user_t* list_users);
+user_t* getuser(char* name, list_user_t* list_users);
+void free_user(user_t *user);
+void free_list_user(list_user_t* list_users);
 
 #endif /* RICOCHET_ROBOT_H */

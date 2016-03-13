@@ -41,7 +41,7 @@
  */
 int connex_socket(char* addrIp, int port);
 void send_request(int sc, int argc, ...);
-char* read_response(int sc);
+void read_response(int sc, char* response);
 
 /** receive method **/
 char* session_getresponse(int socket);

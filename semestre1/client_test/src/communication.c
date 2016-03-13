@@ -63,14 +63,11 @@ void send_request(int sc, int argc, ...) {
 		perror("write");
 		exit(1);
 	}
-	fprintf(stderr, "send %s %d oct \n", requete, strlen(requete));
+//	fprintf(stderr, "send %s %d oct \n", requete, strlen(requete));
 }
 
-char* read_response(int sc) {
-	char response[512];
-	memset(response, 0, 512);
-
-	char c;
+void read_response(int sc, char* response) {
+	char c = 0;
 	int r, i = 0;
 	while (1) {
 		r = read(sc, &c, 1);
@@ -79,12 +76,4 @@ char* read_response(int sc) {
 		response[i++] = c;
 	}
 	response[i] = c;
-	int size = 0;
-	char **tab = NULL;
-	tab = string_to_arraystring(response, &size, '/');
-	for (i = 0; i < size; i++) {
-		printf("part%d : %s\n", i, tab[i]);
-	}
-
-	return NULL; //TODO
 }

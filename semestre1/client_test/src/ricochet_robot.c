@@ -64,6 +64,7 @@ void init_plateau(plateau_t plateau) {
 void parse_plateau(char* data, plateau_t plateau) {
 	int i, x, y, len;
 	char c;
+	const int nb_carac_separator = 4;
 	len = strlen(data);
 	if (len < 7)
 		return;
@@ -72,6 +73,7 @@ void parse_plateau(char* data, plateau_t plateau) {
 	while (i < len) {
 
 		sscanf(data + i, "(%d,%d,%c)", &x, &y, &c);
+//		printf("(%d,%d,%c)\n", x, y, c); // DEBUG
 		switch (c) {
 		case Haut:
 			plateau[x][y] |= CHMUR;
@@ -86,20 +88,22 @@ void parse_plateau(char* data, plateau_t plateau) {
 			plateau[x][y] |= CDMUR;
 			break;
 		}
-		i += 7;
+		i += nb_carac_separator + (x / 10 + 1) + (y / 10 + 1) + 1;
 	}
 }
 
 void parse_enigme(char* data, enigme_t *enig) {
-	int i, x, y;
+	int i, x, y, offset;
 	char c;
 
 	if (strlen(data) < 33) {
 		return;
 	}
-	data++;
-	for (i = 0; i < NB_ROBOT + 1; i++) {
-		sscanf(data + i * 6, "%d%c,%d%c,", &x, &c, &y, &c);
+
+	const int nb_carac_separator = 2;
+	for (i = 0, offset = 1; i < NB_ROBOT + 1; i++) {
+		sscanf(data + offset, "%d%c,%d%c,", &x, &c, &y, &c);
+//		printf("%d%c,%d%c,\n", x, c, y, c); // DEBUG
 		switch (c) {
 		case 'r':
 			enig->robots[ROBOT_R].x = x;
@@ -120,13 +124,118 @@ void parse_enigme(char* data, enigme_t *enig) {
 		case 'c':
 			enig->cible.x = x;
 			enig->cible.y = y;
-			i++;
-			sscanf(data + i * 6, "%c", &(enig->cible.c));
+			offset += nb_carac_separator + (x / 10 + 1) + (y / 10 + 1) + 2;
+			sscanf(data + offset, "%c", &enig->cible.c);
+//			printf("color %c\n", enig->cible.c); // DEBUG
 			break;
+		}
+		offset += nb_carac_separator + (x / 10 + 1) + (y / 10 + 1) + 2;
+	}
+
+}
+
+void parse_bilan(char* data, bilan_t* bil) {
+	int offset, score, len, i;
+	char buffer[NAME_SIZE], c;
+	len = strlen(data);
+
+	if (len < 11)
+		return;
+
+	sscanf(data, "%d", &(bil->current_tour));
+	memset(buffer, 0, NAME_SIZE);
+	int cnom;
+	c = cnom = i = 0;
+	for (offset = 1; offset < len; offset++) {
+		sscanf(data + offset, "%c", &c);
+		switch (c) {
+		case '(':
+			cnom = 1;
+			i = 0;
+			continue;
+			break;
+		case ',':
+			cnom = 0;
+			sscanf(data + offset, ",%d", &score);
+
+			if (getuser(buffer, &bil->list_users) != NULL) {
+				printf("mod %s %d\n", buffer, score);
+			} else {
+				adduser(buffer, &(bil->list_users));
+				printf("cre %s %d\n", buffer, score);
+			}
+
+			memset(buffer, 0, NAME_SIZE);
+			break;
+		}
+		if (cnom) {
+			buffer[i++] = c;
 		}
 	}
 }
 
-void parse_bilan(char* data, bilan_t* bil){
+int adduser(char* name, list_user_t* list_users) {
+	if (getuser(name, list_users)) {
+		return 0;
+	}
+	user_t *new = (user_t*) malloc(sizeof(user_t));
+	strncpy(new->name, name, NAME_SIZE);
+	new->score = 0;
+	new->nb_coups = 0;
+	new->solution = NULL;
 
+	new->next = list_users->first;
+	list_users->first = new;
+	list_users->nb += 1;
+	return 1;
 }
+int removeuser(char* name, list_user_t* list_users) {
+	if (list_users->nb == 0)
+		return 0;
+	user_t *pr, *cur;
+	cur = list_users->first;
+	pr = NULL;
+	while (cur != NULL) {
+		if (!strcmp(name, cur->name)) {
+			if (pr == NULL) {
+				list_users->first = cur->next;
+				free_user(cur);
+			} else {
+				pr->next = cur->next;
+				free_user(cur);
+			}
+			list_users->nb -= 1;
+			return 1;
+		}
+		pr = cur;
+		cur = cur->next;
+	}
+	return 0;
+}
+user_t* getuser(char* name, list_user_t* list_users) {
+	if (list_users->nb == 0)
+		return NULL;
+	user_t *cur;
+	cur = list_users->first;
+
+	while (cur != NULL && strcmp(name, cur->name))
+		cur = cur->next;
+	return cur;
+}
+void free_user(user_t *user) {
+	if (user->solution)
+		free(user->solution);
+	free(user);
+}
+void free_list_user(list_user_t* list_users) {
+	user_t *pr, *cur;
+	cur = list_users->first;
+	pr = NULL;
+	while (cur != NULL) {
+		pr = cur;
+		cur = cur->next;
+		free_user(pr);
+	}
+	list_users->first = NULL;
+}
+
