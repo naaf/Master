@@ -1,0 +1,31 @@
+decision :
+	-quel job à effectuer
+	-quel job à finir et comment le finir (enchére)
+	-quel job enchérer
+	-quel job poster
+	-quel article créer, supprimer, vendre
+	
+stratégie:
+	-comment se procurer des ressources
+	-comment naviguer sur la map
+	
+methode:
+	-determiner le chemin le plus court pour arriver à la destination
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
