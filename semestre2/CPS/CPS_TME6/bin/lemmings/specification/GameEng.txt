@@ -32,7 +32,8 @@ Operators
 Observations :
 	[Invariant]
 		(card(lemmings(G)) < sizeColony(G)
-		gameOver(G) min= (card(lemmings(G)) == 0 ) 
+		gameOver(G) min= (card(lemmings(G)) == 0 ) min= (nbTour(G) * spawnSeep(G)) == sizeColony(G)
+		nbTour(G) * spawnSeep(G) <= sizeColony(G)
 		
 	[init]
 		level(init(L, size, speed)) = L
