@@ -1,0 +1,19 @@
+Service : GameEng
+use : Level, Lemming
+types :
+
+Observators :
+
+const level : [GameEng] -> [Level]
+obstacle : [GameEng] * int * int -> bool
+	pre obstacle(G,i,j) require 
+		Level::caseExiste(level(G), i, j)
+sizeColony :[GameEng] -> int
+spawnSpeed : [GameEng] -> int
+gameOver : [GameEng] -> bool
+score : [GameEng] -> int
+nbTour : [GameEng] -> int
+lemmings : [GameEng] -> set<Lemming>
+lemmingExiste : [GameEng] * int -> bool
+getLemming : [GameEng] * int -> Lemming
+	pre getLemming(G, n) require lemmingExiste(G,n)
