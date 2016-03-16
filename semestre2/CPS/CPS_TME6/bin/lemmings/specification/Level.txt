@@ -1,0 +1,93 @@
+Service    :       Level
+
+Types      :       bool, int, enum Nature{EMPTY, DIRT, METAL}
+
+Observators:       height:[Level] --> int
+                   width:[Level] --> int
+                   editing:[Level] --> bool
+                   nature:[Level] * int * int --> Nature
+                   caseExist:[Level] * int * int --> bool
+                       
+                           
+                   
+Constructors:      init:int * int --> [Level]
+                        pre init(n1 , n2) require (n1 > 0)^(n2 > 0)
+       
+Operators   :       setNature:[Level] * int * int * Nature --> [Level]
+                        pre setNature(L, n1, n2, Nat) require
+                            caseExist(L, n1, n2)
+                            ^ editing(L)
+                            
+                    goPlay:[Level] --> [Level]
+                        pre goPlay(L) require 
+                            editing(L) 
+                            ^ (∀ i ∈ {0, height(L) -1} et 
+                                         j ∈ {0 à width(L) -1} 
+                                          nature(i,j) = METAL)
+                            ^ (∀ i ∈ {0 à height(L) -1} et 
+                                         j ∈ {0 , width(L) -1} 
+                                          nature(i,j) = METAL)
+                                          
+                    remove:[Level] * int * int --> [Level]
+                        pre remove(L, n1, n2) require
+                            ¬(editing(L))
+                            ^ caseExist(n1, n2)
+                            ^ nature(L, n1, n2) = DIRT
+                            
+                    build:[Level] * int * int --> [Level]     
+                         pre remove(L, n1, n2) require
+                            ¬(editing(L))
+                            ^ caseExist(n1, n2)
+                            ^ nature(L, n1, n2) = EMPTY
+                            
+                            
+Observations :
+    [invariant]      
+                    height(L) > 0 
+                    width(L) > 0
+                    caseExist(L, n1, n2) min=  0 <= n1 < height(L) && 0 <= n1 < width(L)
+    
+    [init]          
+                   height(init(n1 , n2)) = n1
+                   width(init(n1 , n2)) = n2
+                   editing(init(n1 , n2)) = true
+                   ∀i ∈ {0 à n1 -1}, ∀j ∈ {0 à n2 -1} nature(init(n1 , n2), i, j) = EMPTY
+                   
+     [setNature]          
+                   height(setNature(L, i, j, Nat)) = height(L)
+                   width(setNature(L, i, j, Nat)) = width(L)
+                   editing(setNature(L, i, j, Nat)) = true
+                   ∀ i,p ∈ {0 à n1 -1}, ∀ j,k ∈ {0 à n2 -1}
+                        if(p == i && k == j)
+                            nature(setNature(L, i, j, Nat), p, k) = Nat
+                        else
+                            nature(setNature(L, i, j, Nat), p, k) = nature(L, p, k)    
+                            
+      [goPlay]  
+					height(goPlay(L)) = height(L)
+					width(goPlay(L)) = width(L)
+					if (editing(L) == true) 
+						editing(goPlay(L)) =  ¬(editing(L))
+					else
+						editing(goPlay(L)) =  editing(L)
+					nature(goPlay(L),i,j) = nature(L,i,j)
+		
+					
+	  [remove]
+	  				height(remove(L, i, j)) = height(L)
+					width(remove(L, i, j)) = width(L)
+					editing(remove(L, i, j)) =  editing(L)
+					if( nature(L,i,j) == DIRTY)
+						 nature(remove(L,i,j)) = EMPTY
+					else
+						nature(remove(L,i,j)) =  nature(L,i,j)
+						
+	  [build]		
+	  				height(build(L, i, j)) = height(L)
+					width(build(L, i, j)) = width(L)
+					editing(build(L, i, j)) =  editing(L)
+					if( nature(L,i,j) == EMPTY)
+						 nature(build(L,i,j)) = DIRTY
+					else
+						nature(build(L,i,j)) =  nature(L,i,j)
+	  	 
