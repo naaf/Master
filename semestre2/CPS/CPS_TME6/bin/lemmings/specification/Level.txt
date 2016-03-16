@@ -1,6 +1,6 @@
 Service    :       Level
 
-Types      :       bool, int, enum Nature{EMPTY, DIRT, METAL}
+Types      :       bool, int, enum Nature{EMPTY, DIRT, METAL, ENTRANCE, EXIT}
 
 Observators:       height:[Level] --> int
                    width:[Level] --> int
@@ -27,6 +27,10 @@ Operators   :       setNature:[Level] * int * int * Nature --> [Level]
                             ^ (∀ i ∈ {0 à height(L) -1} et 
                                          j ∈ {0 , width(L) -1} 
                                           nature(i,j) = METAL)
+							^ il existe y1,y2,y3 consécutifs  ∈ {1 à height(L)-1} et il existe x ∈ {1 à width(L)-1} tq 
+								nature(L,x,y1) = nature(L,x,y3) = EMPTY alors  nature(L,x,y2) = ENTRANCE //entrance
+							^ il existe y1,y2,y3 consécutifs ∈ {1 à height(L)-1} et il existe x ∈ {1 à width(L)-1} tq 
+								nature(L,x,y1) = METAL ^ nature(L,x,y3) = EMPTY alors  nature(L,x,y2) = EXIT //entrance
                                           
                     remove:[Level] * int * int --> [Level]
                         pre remove(L, n1, n2) require

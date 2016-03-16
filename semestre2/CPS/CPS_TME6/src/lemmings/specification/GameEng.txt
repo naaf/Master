@@ -1,19 +1,63 @@
 Service : GameEng
-use : Level, Lemming
+use : Level
 types :
 
 Observators :
+		
+	const level : [GameEng] -> [Level]
+	obstacle : [GameEng] * int * int -> bool
+		pre obstacle(G,i,j) require 
+			Level::caseExiste(level(G), i, j)
+	sizeColony :[GameEng] -> int
+	spawnSpeed : [GameEng] -> int
+	gameOver : [GameEng] -> bool
+	score : [GameEng] -> int
+		pre score(G) require gameOver(G)
+	nbTour : [GameEng] -> int
+	lemmings : [GameEng] -> set<Lemming>
+	lemmingExiste : [GameEng] * int -> bool
+	getLemming : [GameEng] * int -> Lemming
+		pre getLemming(G, n) require lemmingExiste(G,n)
+																	
+Constructors : 
+	init : Level * int * int -> [GameEng]
+		pre : init(L,size,speed) require size > 0 ^ speed > 0
 
-const level : [GameEng] -> [Level]
-obstacle : [GameEng] * int * int -> bool
-	pre obstacle(G,i,j) require 
-		Level::caseExiste(level(G), i, j)
-sizeColony :[GameEng] -> int
-spawnSpeed : [GameEng] -> int
-gameOver : [GameEng] -> bool
-score : [GameEng] -> int
-nbTour : [GameEng] -> int
-lemmings : [GameEng] -> set<Lemming>
-lemmingExiste : [GameEng] * int -> bool
-getLemming : [GameEng] * int -> Lemming
-	pre getLemming(G, n) require lemmingExiste(G,n)
+Operators
+	jeu : [GameEng] -> GameEng
+		pre jeu(G) require ¬ gameOver(G)
+	removeLemming : [GameEng] * int -> GameEng
+		pre removeLemming(G, id) -> lemmingExiste(G, id)
+		
+Observations :
+	[Invariant]
+		(card(lemmings(G)) < sizeColony(G)
+		gameOver(G) min= (card(lemmings(G)) == 0 ) 
+		
+	[init]
+		level(init(L, size, speed)) = L
+		obstacle(init(L, size, speed),i,j) = Level::nature(L,i,j) ∈ {DIRTY, METAL}
+		sizeColony(init(L, size, speed)) = size
+		spawnSpeed(init(L, size, speed)) = speed
+		gameOver(init(L, size, speed)) = false
+		nbTour(init(L, size, speed)) = 0
+		lemmings(init(L, size, speed)) = {}
+	
+	[removeLemming]
+		level(removeLemming(G, id)) = Level(G)
+		obstacle(removeLemming(G, id),i,j) = Level::nature(L,i,j) ∈ {DIRTY, METAL}
+		sizeColony(removeLemming(G, id)) = sizeColony(G)
+		spawnSpeed(removeLemming(G, id)) = spawnSpeed(G)
+		gameOver(removeLemming(G, id)) = gameOver(G)
+		nbTour(removeLemming(G, id)) = nbTour(G) + 1
+		lemmings(removeLemming(G, id)) = lemmings(G) - {getLemming(G, id)}
+		
+	[Jeu]
+		level(jeu(G)) = Level(G)
+		obstacle(jeu(G),i,j) = Level::nature(L,i,j) ∈ {DIRTY, METAL}
+		sizeColony(jeu(G)) = sizeColony(G)
+		spawnSpeed(jeu(G)) = spawnSpeed(G)
+		gameOver(jeu(G)) = gameOver(G)
+		nbTour(jeu(G)) = nbTour(G) + 1
+		lemmings(jeu(G)) = lemmings(G)
+		

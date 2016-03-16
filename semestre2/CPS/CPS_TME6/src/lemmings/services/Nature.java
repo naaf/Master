@@ -3,5 +3,7 @@ package lemmings.services;
 public enum Nature {
 	EMPTY,
 	DIRTY,
-	METAL
+	METAL,
+	ENTRANCE,
+	EXIT
 }

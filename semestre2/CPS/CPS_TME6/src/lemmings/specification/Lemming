@@ -1,0 +1,51 @@
+Service : Lemming
+use : GameEng
+types : Direction{GAUCHE, DROITE}, Type{TOMBEUR, MARCHEUR}
+
+Observators :
+	x : [Lemming] -> int
+	y : [lemming] -> int
+	id : [Lemming] -> int
+	direction : [Lemming] -> Direction
+	type : [Lemming] -> Type
+	gameEng : [Lemming] -> GameEng
+
+Constructors : 
+	init : GamingEng * int * int -> [GameEng]
+		pre : init(L,size,speed) require size > 0 ^ speed > 0
+
+Operators
+ 	step : [Lemming] -> Lemming
+	setType : [Lemming] * Type -> Lemming
+	switchDirection : [Lemming] -> Lemming
+	
+Observations :
+	[Invariant]
+		Level::nature(GameEng::level(gameEng(Lemming)),x, y -1) = EMPTY
+		
+	[init]
+		x(init(G, i,j)) = i
+		y(init(G, i,j)) = j
+		direction(init(G, i,j)) = DROITE
+		type(init(G, i,j)) = MARCHEUR
+		gameEng(init(G, i,j)) = G
+		
+	[setType]
+		x(setType(L, T)) = x(L)
+		y(setType(L, T)) = y(L)
+		direction(setType(L, T)) = direction(L)
+		type(setType(L, T)) = T
+		gameEng(setType(L, T)) = gameEng(L)
+		
+	[switchDirection]
+		x(switchDirection(L)) = x(L)
+		y(switchDirection(L)) = y(L)
+		direction(setType(L)) = ¬ direction(L)
+		type(switchDirection(L)) = type(L)
+		gameEng(switchDirection(L)) = gameEng(L)
+		
+	[step]
+	
+	
+	
+	
