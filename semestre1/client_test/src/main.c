@@ -97,50 +97,52 @@ void *run_ctrl(void *arg) {
 
 int main(int argc, char** argv) {
 
-	sigset_t mask;
-	struct sigaction action;
+//	sigset_t mask;
+//	struct sigaction action;
+//
+//	action.sa_sigaction = gest_ihm;
+//	action.sa_flags = SA_SIGINFO | SA_RESTART;
+//
+//	sigfillset(&mask);
+//	if (sigprocmask(SIG_SETMASK, &mask, NULL) == -1) {
+//		perror("sigprocmask");
+//	}
+//
+//	sigemptyset(&action.sa_mask);
+//	if (sigaction(SIG_IHM, &action, NULL) < 0)
+//		fprintf(stderr, "SIG_IHM non intercepté \n");
+//
+//	sc = connex_socket("127.0.0.1", 2016);
+//	pid_ihm = fork();
+//
+//	if (pid_ihm == 0) { // fils proc IHM
+//
+//		sigdelset(&mask, SIG_IHM);
+//		sigdelset(&mask, SIGINT);
+//		if (sigprocmask(SIG_SETMASK, &mask, NULL) == -1) {
+//			perror("sigprocmask");
+//		}
+//
+//		ihm();
+//	} else {
+//		printf("pid IHM %d \n", pid_ihm);
+//	}
+//
+//	if (pthread_create(&thread_com, NULL, run_com, &sc) != 0) {
+//		perror("pthread_create \n");
+//		exit(1);
+//	}
+//	if (pthread_create(&thread_ctrl, NULL, run_ctrl, NULL) != 0) {
+//		perror("pthread_create \n");
+//		exit(1);
+//	}
+//
+//	pthread_join(thread_com, NULL);
+//	pthread_join(thread_ctrl, NULL);
+//
+//	wait(NULL);
+//	printf("Fin main\n");
 
-	action.sa_sigaction = gest_ihm;
-	action.sa_flags = SA_SIGINFO | SA_RESTART;
-
-	sigfillset(&mask);
-	if (sigprocmask(SIG_SETMASK, &mask, NULL) == -1) {
-		perror("sigprocmask");
-	}
-
-	sigemptyset(&action.sa_mask);
-	if (sigaction(SIG_IHM, &action, NULL) < 0)
-		fprintf(stderr, "SIG_IHM non intercepté \n");
-
-	sc = connex_socket("127.0.0.1", 2016);
-	pid_ihm = fork();
-
-	if (pid_ihm == 0) { // fils proc IHM
-
-		sigdelset(&mask, SIG_IHM);
-		sigdelset(&mask, SIGINT);
-		if (sigprocmask(SIG_SETMASK, &mask, NULL) == -1) {
-			perror("sigprocmask");
-		}
-
-		ihm();
-	} else {
-		printf("pid IHM %d \n", pid_ihm);
-	}
-
-	if (pthread_create(&thread_com, NULL, run_com, &sc) != 0) {
-		perror("pthread_create \n");
-		exit(1);
-	}
-	if (pthread_create(&thread_ctrl, NULL, run_ctrl, NULL) != 0) {
-		perror("pthread_create \n");
-		exit(1);
-	}
-
-	pthread_join(thread_com, NULL);
-	pthread_join(thread_ctrl, NULL);
-
-	wait(NULL);
-	printf("Fin main\n");
+	ihm();
 	return EXIT_SUCCESS;
 }

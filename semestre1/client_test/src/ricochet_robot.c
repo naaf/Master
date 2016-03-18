@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../headers/ricochet_robot.h"
+#include "../headers/ihm.h"
 
 char** string_to_arraystring(char* data, int* size, char separator) {
 	int i, cptLettre, lenght, pos;
@@ -108,24 +109,34 @@ void parse_enigme(char* data, enigme_t *enig) {
 		case 'r':
 			enig->robots[ROBOT_R].x = x;
 			enig->robots[ROBOT_R].y = y;
+			sprintf(enig->robots[ROBOT_R].path, "%srobot%c%s", ASSETS, c,
+			EXT_IMG);
 			break;
 		case 'b':
 			enig->robots[ROBOT_B].x = x;
 			enig->robots[ROBOT_B].y = y;
+			sprintf(enig->robots[ROBOT_B].path, "%srobot%c%s", ASSETS, c,
+			EXT_IMG);
 			break;
 		case 'j':
 			enig->robots[ROBOT_J].x = x;
 			enig->robots[ROBOT_J].y = y;
+			sprintf(enig->robots[ROBOT_J].path, "%srobot%c%s", ASSETS, c,
+			EXT_IMG);
 			break;
 		case 'v':
 			enig->robots[ROBOT_V].x = x;
 			enig->robots[ROBOT_V].y = y;
+			sprintf(enig->robots[ROBOT_V].path, "%srobot%c%s", ASSETS, c,
+			EXT_IMG);
 			break;
 		case 'c':
 			enig->cible.x = x;
 			enig->cible.y = y;
 			offset += nb_carac_separator + (x / 10 + 1) + (y / 10 + 1) + 2;
 			sscanf(data + offset, "%c", &enig->cible.c);
+			sprintf(enig->cible.path, "%scible%c%s", ASSETS, enig->cible.c,
+			EXT_IMG);
 //			printf("color %c\n", enig->cible.c); // DEBUG
 			break;
 		}

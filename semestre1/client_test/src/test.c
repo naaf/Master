@@ -41,9 +41,9 @@ void test_users() {
 	free_list_user(&bil.list_users);
 }
 void test_parse() {
-	plateau_t pl;
 	enigme_t eni;
 	bilan_t bil;
+	plateau_t pl;
 
 	char* ch = "(13,4,H)(3,14,G)(2,6,H)";
 	char* ch1 = "(13r,5r,1b,1b,12j,2j,3v,13v,4c,4c,R)";

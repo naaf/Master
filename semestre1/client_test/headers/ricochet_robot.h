@@ -8,13 +8,6 @@
 #ifndef RICOCHET_ROBOT_H
 #define RICOCHET_ROBOT_H
 
-#define CHMUR 0x0001	/* case mur haut*/
-#define CBMUR 0x0002 	/* case mur bas*/
-#define CDMUR 0x0004 	/* case mur droit*/
-#define CGMUR 0x0008 	/* case mur gauche*/
-#define CROBOT 0x0010 	/* case contient robot*/
-#define CSMUR 0x0020	/* case sans mur, case libre*/
-
 #define CBILAN 	0x0010 	/* type bilan*/
 #define CENIGME 0x0002 	/* type enigme*/
 #define CDEP 	0x0004 	/* type deplacement*/
@@ -27,6 +20,10 @@
 #define ROBOT_J 1
 #define ROBOT_R 2
 #define ROBOT_V 3
+
+#define ASSETS "assets/"
+#define EXT_IMG ".png"
+
 
 #define NAME_SIZE 256
 
@@ -62,12 +59,14 @@ typedef enum {
 typedef struct {
 	int x;
 	int y;
+	char path[18];
 } robot_t;
 
 typedef struct {
 	int x;
 	int y;
 	char c;
+	char path[18];
 } cible_t;
 
 typedef struct {
@@ -86,6 +85,8 @@ typedef struct {
 		char* nb_coup;
 	} content;
 } response_t;
+
+void init_plateau(plateau_t plateau);
 
 response_t parse(char* data);
 void parse_plateau(char* data, plateau_t plateau);
