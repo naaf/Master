@@ -9,6 +9,7 @@
 #include <string.h>
 #include "../headers/ricochet_robot.h"
 #include "../headers/communication.h"
+#include "../headers/ihm.h"
 
 void test_aff(list_user_t* l) {
 	user_t *cur;
@@ -80,5 +81,19 @@ void test_comm() {
 		printf("part%d : %s\n", i, tab[i]);
 	}
 	free_table(tab, size);
+
+}
+void test(){
+	int d = 0 ;
+	d |= CROBOT;
+	d |= CHMUR;
+	d &= ~CROBOT;
+
+	if( d & CHMUR) printf("CHMUR OK \n");
+	if( d & CBMUR) printf("CBMUR OK \n");
+	if( d & CGMUR) printf("CGMUR OK \n");
+	if( d & CDMUR) printf("CDMUR OK \n");
+	if( d & CROBOT) printf("CROBOT OK \n");
+	if( d & CSMUR) printf("CSMUR OK \n");
 
 }

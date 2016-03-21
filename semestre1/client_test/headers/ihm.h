@@ -10,15 +10,11 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include "ricochet_robot.h"
+#include "communication.h"
 #include "SDLS.h"
 
-#define CHMUR 0x0001	/* case mur haut*/
-#define CBMUR 0x0002 	/* case mur bas*/
-#define CDMUR 0x0004 	/* case mur droit*/
-#define CGMUR 0x0008 	/* case mur gauche*/
-#define CROBOT 0x0010 	/* case contient robot*/
-#define CSMUR 0x0020	/* case sans mur, case libre*/
 
 #define CASE 32
 #define NB_CASE 16

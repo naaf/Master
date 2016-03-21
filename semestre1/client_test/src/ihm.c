@@ -8,8 +8,62 @@
 #include <stdlib.h>
 
 #include "../headers/ihm.h"
-
+#include"../headers/EntreeSortie.h"
 #define MAP "assets/map.bmp"
+#define ACC "assets/accueil.png"
+
+static SDL_Texture *empty_Tx;
+char requete[REQUETE_SIZE];
+
+bool_t estDirection(enigme_t *e, SDL_MouseMotionEvent* p, int selected, int x,
+		int y) {
+	return (e->robots[selected].x + x == p->x / CASE)
+			&& (e->robots[selected].y + y == p->y / CASE);
+}
+
+void onclickReset() {
+
+}
+void onclickSend(char* message) {
+	printf("send %s \n", message);
+}
+
+bool_t estContenu(SDL_Rect *rect, SDL_MouseMotionEvent* p) {
+	if (rect->x > p->x || p->x > rect->x + rect->w)
+		return FALSE;
+	if (rect->y > p->y || p->y > rect->y + rect->h)
+		return FALSE;
+	return TRUE;
+}
+void update_pos_robot(plateau_t p, robot_t *r, Direction d) {
+	p[r->x][r->y] &= ~CROBOT;
+	switch (d) {
+	case Haut:
+		while (!(p[r->x][r->y] & CHMUR) && r->y > 0
+				&& !(p[r->x][r->y - 1] & CROBOT))
+			r->y -= 1;
+		break;
+	case Bas:
+		while (!(p[r->x][r->y] & CBMUR) && r->y < NB_CASE - 1
+				&& !(p[r->x][r->y + 1] & CROBOT))
+			r->y += 1;
+		break;
+	case Gauche:
+		while (!(p[r->x][r->y] & CGMUR) && r->x > 0
+				&& !(p[r->x - 1][r->y] & CROBOT))
+			r->x -= 1;
+		break;
+	case Droit:
+		while (!(p[r->x][r->y] & CDMUR) && r->x < NB_CASE - 1
+				&& !(p[r->x + 1][r->y] & CROBOT))
+			r->x += 1;
+		break;
+	case NONE:
+		break;
+	}
+	p[r->x][r->y] |= CROBOT;
+
+}
 
 void display_plateau(SDL_Renderer *ren, plateau_t pl) {
 
@@ -43,21 +97,149 @@ void display_plateau(SDL_Renderer *ren, plateau_t pl) {
 		}
 	}
 	SDL_RenderPresent(ren);
-
 }
 
 void display_enigme(SDL_Renderer *ren, enigme_t *e) {
 	int i;
 	SDL_Texture * tex;
 	for (i = 0; i < NB_ROBOT; i++) {
-		printf(" r %s %d %d \n", e->robots[i].path, e->robots[i].x,
-				e->robots[i].y);
 		tex = IMG_LoadTexture(ren, e->robots[i].path);
 		SDLs_dessin(tex, ren, e->robots[i].x * CASE, e->robots[i].y * CASE);
 	}
 	tex = IMG_LoadTexture(ren, e->cible.path);
 	SDLs_dessin(tex, ren, e->cible.x * CASE, e->cible.y * CASE);
 	SDL_RenderPresent(ren);
+}
+
+void awaitLoading(SDL_Renderer *ren) {
+	SDL_Texture *loading_Tx;
+	loading_Tx = IMG_LoadTexture(ren, "assets/loading.png");
+
+	SDL_Rect dst_loading = { 12 * CASE, 12 * CASE, 64, 64 };
+	SDL_Rect src_loading = { 0, 0, 64, 64 };
+
+	int i;
+	for (i = 0; i < 5; ++i) {
+		src_loading.x = 2 * 64;
+		SDL_RenderCopy(ren, loading_Tx, &src_loading, &dst_loading);
+		src_loading.x = (i % 2) * 64;
+		SDL_RenderCopy(ren, loading_Tx, &src_loading, &dst_loading);
+		SDL_RenderPresent(ren);
+		SDL_Delay(200);
+	}
+
+}
+
+SDL_Texture* txt2Texture(SDL_Renderer * ren, TTF_Font *font, SDL_Color *color,
+		char* msg) {
+	SDL_Surface *surf;
+	SDL_Texture *tex;
+	surf = TTF_RenderText_Blended(font, msg, *color);
+	tex = SDL_CreateTextureFromSurface(ren, surf);
+
+	SDL_FreeSurface(surf);
+	return tex;
+}
+
+void displayAccueil(SDL_Window *win, SDL_Renderer *ren) {
+	bool_t quit = FALSE;
+	SDL_Event event;
+	SDL_Color color = { 0, 0, 0, 0 };
+	if (TTF_Init() == -1) {
+		fprintf(stderr, "Erreur d'initialisation de TTF_Init : %s\n",
+		TTF_GetError());
+	}
+	TTF_Font *font = TTF_OpenFont("assets/dayrom.TTF", 20);
+
+	SDL_Texture *inputField_Tx;
+	SDL_Texture *emptyInput_Tx = IMG_LoadTexture(ren, "assets/inputField.png");
+	SDL_Rect rectInputField = { 8 * CASE, 8 * CASE, 0, 0 };
+	SDL_Rect rectEmptyField = { 8 * CASE, 8 * CASE, 9 * CASE, 64 };
+	SDL_Rect rectSend = { 17 * CASE, 8 * CASE, 64, 64 };
+
+	char name[256];
+	memset(name, 0, 256);
+	int len = 0;
+	bool_t shift, updateInput;
+
+	shift = updateInput = FALSE;
+	SDLS_affiche_image(ACC, ren, 0, 0);
+
+	while (!quit) {
+		SDL_WaitEvent(&event);
+		switch (event.type) {
+		case SDL_KEYDOWN:
+			switch (event.key.keysym.sym) {
+			case SDLK_DELETE:
+				len = (len == 0) ? len : len - 1;
+				name[len] = 0;
+				updateInput = TRUE;
+				break;
+			case SDLK_BACKSPACE:
+				len = (len == 0) ? len : len - 1;
+				name[len] = 0;
+				updateInput = TRUE;
+				break;
+			case SDLK_KP_ENTER:
+				break;
+			case SDLK_LSHIFT:
+			case SDLK_RSHIFT:
+				shift = TRUE;
+				break;
+			default:
+				if (event.key.keysym.sym >= 'a'
+						&& event.key.keysym.sym <= 'z') {
+					name[len++] = event.key.keysym.sym
+							- ((shift == TRUE) ? 32 : 0);
+					updateInput = TRUE;
+				}
+
+				break;
+			}
+			break;
+		case SDL_KEYUP:
+			switch (event.key.keysym.sym) {
+			case SDLK_LSHIFT:
+			case SDLK_RSHIFT:
+				shift = FALSE;
+				break;
+			}
+			break;
+		case SDL_MOUSEBUTTONDOWN:
+			if (estContenu(&rectSend, &event.motion)) {
+				if (len <= 0) {
+					SDL_ShowSimpleMessageBox(0, "ERROR", "nom vide", win);
+				} else {
+					memset(requete, 0, REQUETE_SIZE);
+					sprintf(requete, "%s/%s/\n", CONNEXION, name);
+					onclickSend(requete);
+					awaitLoading(ren);
+//					TODO
+					quit = TRUE;
+				}
+			}
+			break;
+		case SDL_MOUSEBUTTONUP:
+			break;
+
+		case SDL_QUIT:
+			quit = TRUE;
+			break;
+		}
+		if (updateInput) {
+			updateInput = FALSE;
+			printf("name %s\n", name);
+			inputField_Tx = txt2Texture(ren, font, &color, name);
+			SDL_QueryTexture(inputField_Tx, NULL, NULL, &rectInputField.w,
+					&rectInputField.h);
+			SDL_RenderCopy(ren, emptyInput_Tx, NULL, &rectEmptyField);
+			SDL_RenderCopy(ren, inputField_Tx, NULL, &rectInputField);
+			SDL_RenderPresent(ren);
+
+		}
+	}
+
+	TTF_CloseFont(font);
 }
 
 void aff() {
@@ -67,23 +249,193 @@ void aff() {
 		fflush(stdout);
 	}
 }
+void cpyPlateau(plateau_t plsrc, plateau_t pldst) {
+	int i, j;
+	for (i = 0; i < NB_CASE; i++) {
+		for (j = 0; j < NB_CASE; j++) {
+			pldst[i][j] = plsrc[i][j];
+		}
+	}
+}
+void displayCoup(SDL_Renderer *ren, SDL_Texture *tmp_Tx, SDL_Rect srcR,
+		SDL_Rect emptyR) {
+	srcR.x = 13 * CASE;
+	srcR.y = 18 * CASE - 8;
+	srcR.w = 64;
+
+	SDL_RenderCopy(ren, empty_Tx, &emptyR, &srcR);
+	SDL_QueryTexture(tmp_Tx, NULL, NULL, &srcR.w, &srcR.h);
+	SDL_RenderCopy(ren, tmp_Tx, NULL, &srcR);
+}
+
+int estEntier(char *s) {
+	int nb = atoi(s);
+	if (nb > 0 || (nb == 0 && !strcmp(s, "0")))
+		return nb;
+	return -1;
+}
+
 int ihm1() {
 	SDL_Window *win = 0;
 	SDL_Renderer *ren = 0;
-	SDLS_init(WIDTH, HEIGHT, &win, &ren);
+	TTF_Font *font;
+	SDL_Color color = { 0, 0, 0, 0 };
+	SDL_Texture *tmp_Tx;
+	SDL_Event event;
 
-	plateau_t pl;
-	enigme_t eni;
+	SDL_Rect rectLabelCoup = { 10 * CASE, 16 * CASE + 16, 0, 0 };
+	SDL_Rect rectSendMoves = { 7 * CASE, 17 * CASE, 64, 64 };
+	SDL_Rect rectReset = { 10 * CASE, 17 * CASE, 64, 64 };
+	SDL_Rect rectCoup = { 12 * CASE, 17 * CASE, CASE * 4, 64 };
+	SDL_Rect rectEmpty = { 0, 0, 64, 32 };
+
+	plateau_t pl, oldPl;
+	enigme_t eni, oldEni;
+	Direction dr;
+	int selected;
+	bool_t quit = FALSE;
+	bool_t focusCoup = FALSE;
+	bool_t phaseEchere = FALSE;
+	bool_t focusChat = FALSE;
+
+	char message[256];
+	char moves[512];
+	char move[3];
+	char coups[5];
+	char* labelCoup = "Veuillez entrer le nombre de coups :";
+
+	int x, y, i;
 	char* ch = "(0,0,H)(0,0,G)(0,0,B)(0,0,D)(2,0,H)";
-	char* ch1 = "(13r,5r,1b,1b,12j,2j,3v,13v,4c,4c,B)";
+	char* ch1 = "(0r,0r,1b,1b,12j,2j,3v,13v,4c,4c,B)";
+
+	/*initialisation*/
+	SDLS_init(768, 608, &win, &ren);
+	if (TTF_Init() == -1) {
+		fprintf(stderr, "Erreur d'initialisation de TTF_Init : %s\n",
+		TTF_GetError());
+	}
+
+	memset(message, 0, sizeof(message));
+	memset(moves, 0, sizeof(moves));
+	memset(move, 0, sizeof(move));
+	memset(coups, 0, sizeof(coups));
+	empty_Tx = IMG_LoadTexture(ren, "assets/inputField.png");
+	font = TTF_OpenFont("assets/dayrom.TTF", 12);
+
 	init_plateau(pl);
 	parse_plateau(ch, pl);
 	parse_enigme(ch1, &eni);
+	bind_enigme_plateau(pl, &eni);
+	oldEni = eni;
+	cpyPlateau(pl, oldPl);
+	selected = -1;
+	dr = NONE;
 
+	displayAccueil(win, ren);
+	SDLS_affiche_image("assets/pl.png", ren, 0, 0);
 	display_plateau(ren, pl);
 	display_enigme(ren, &eni);
 
-	SDL_Delay(9000);
+	tmp_Tx = txt2Texture(ren, font, &color, labelCoup);
+	SDL_QueryTexture(tmp_Tx, NULL, NULL, &rectLabelCoup.w, &rectLabelCoup.h);
+	SDL_RenderCopy(ren, tmp_Tx, NULL, &rectLabelCoup);
+	SDL_RenderPresent(ren);
+	TTF_CloseFont(font);
+	font = TTF_OpenFont("assets/dayrom.TTF", 24);
+
+	SDL_StartTextInput();
+
+	while (!quit) {
+		SDL_WaitEvent(&event);
+
+		switch (event.type) {
+		case SDL_MOUSEBUTTONDOWN:
+			if (estContenu(&rectSendMoves, &event.motion)) {
+				SDL_ShowSimpleMessageBox(0, "SENDMOVES", moves, win);
+				onclickSend(moves);
+			}
+			if (estContenu(&rectReset, &event.motion)) {
+				SDL_ShowSimpleMessageBox(0, "DEBUG", "RESET", win);
+				if (strlen(moves) > 0) {
+					eni = oldEni;
+					cpyPlateau(oldPl, pl);
+					memset(moves, 0, sizeof(moves));
+					sprintf(coups, "%d", 0);
+
+					display_plateau(ren, pl);
+					display_enigme(ren, &eni);
+					tmp_Tx = txt2Texture(ren, font, &color, coups);
+					displayCoup(ren, tmp_Tx, rectCoup, rectEmpty);
+					SDL_RenderPresent(ren);
+
+				}
+			}
+			if (estContenu(&rectCoup, &event.motion)) {
+				SDL_ShowSimpleMessageBox(0, "DEBUG", "COUPS", win);
+				focusCoup = TRUE;
+			}
+
+			//handle move
+			x = event.motion.x / CASE;
+			y = event.motion.y / CASE;
+			for (i = 0; i < NB_ROBOT; ++i) {
+				if (eni.robots[i].x == x && eni.robots[i].y == y)
+					selected = i;
+			}
+
+			if (selected > -1) {
+				dr = estDirection(&eni, &event.motion, selected, -1, 0)
+						== TRUE ? Gauche : dr;
+				dr = estDirection(&eni, &event.motion, selected, 1, 0) == TRUE ?
+						Droit : dr;
+				dr = estDirection(&eni, &event.motion, selected, 0, -1)
+						== TRUE ? Haut : dr;
+				dr = estDirection(&eni, &event.motion, selected, 0, 1) == TRUE ?
+						Bas : dr;
+			}
+
+			if (dr != NONE) {
+				update_pos_robot(pl, &eni.robots[selected], dr);
+				/* update move */
+				move[0] = eni.robots[selected].c;
+				move[1] = dr;
+				strcat(moves, move);
+				sprintf(coups, "%d", ((int) (strlen(moves) / 2)));
+
+				// update view améliorer en ne pas reafficher les elts statique
+				display_plateau(ren, pl);
+				display_enigme(ren, &eni);
+				tmp_Tx = txt2Texture(ren, font, &color, coups);
+				displayCoup(ren, tmp_Tx, rectCoup, rectEmpty);
+
+				SDL_RenderPresent(ren);
+
+				selected = -1;
+				dr = NONE;
+			}
+			break;
+
+		case SDL_TEXTINPUT:
+
+			if (focusCoup && phaseEchere) {
+				int nb = estEntier(event.text.text);
+				if (0 <= nb && nb <= 9) {
+					printf("entier ok\n");
+				}
+			}
+			if (focusChat) {
+				SDL_ShowSimpleMessageBox(0, "CHAT", "FOCUS", win);
+			}
+
+			break;
+		case SDL_QUIT:
+			quit = TRUE;
+			break;
+
+		}
+	}
+
+	TTF_CloseFont(font);
 	SDL_DestroyRenderer(ren);
 	SDL_DestroyWindow(win);
 	SDL_Quit();

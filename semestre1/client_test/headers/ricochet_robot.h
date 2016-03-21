@@ -15,17 +15,31 @@
 #define CNB_CP	0x0020 	/* type nb_coup*/
 #define CPLATE	0x0008 	/* type plateau*/
 
+
+#define CSMUR 0x0000	/* case sans mur, case libre*/
+#define CHMUR 0x0001	/* case mur haut*/
+#define CBMUR 0x0002 	/* case mur bas*/
+#define CDMUR 0x0004 	/* case mur droit*/
+#define CGMUR 0x0008 	/* case mur gauche*/
+#define CROBOT 0x0010 	/* case contient robot*/
+#define CCIBLE 0x0020 	/* case contient cible*/
+
 #define NB_ROBOT 4
 #define ROBOT_B 0
 #define ROBOT_J 1
 #define ROBOT_R 2
 #define ROBOT_V 3
 
+
+
 #define ASSETS "assets/"
 #define EXT_IMG ".png"
 
-
 #define NAME_SIZE 256
+
+typedef enum {
+	TRUE = 1, FALSE = 0
+} bool_t;
 
 typedef struct _user {
 	char name[NAME_SIZE];
@@ -53,21 +67,17 @@ typedef enum {
 } Color;
 
 typedef enum {
-	Haut = 'H', Bas = 'B', Gauche = 'G', Droit = 'D'
-} Dirction;
-
-typedef struct {
-	int x;
-	int y;
-	char path[18];
-} robot_t;
+	Haut = 'H', Bas = 'B', Gauche = 'G', Droit = 'D', NONE = 'N'
+} Direction;
 
 typedef struct {
 	int x;
 	int y;
 	char c;
 	char path[18];
-} cible_t;
+} robot_t;
+
+typedef robot_t cible_t;
 
 typedef struct {
 	robot_t robots[4];
@@ -87,6 +97,7 @@ typedef struct {
 } response_t;
 
 void init_plateau(plateau_t plateau);
+void bind_enigme_plateau(plateau_t p, enigme_t *e);
 
 response_t parse(char* data);
 void parse_plateau(char* data, plateau_t plateau);

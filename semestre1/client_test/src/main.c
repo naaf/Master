@@ -24,25 +24,24 @@
 #define SIG_IHM (SIGRTMIN + 4)
 
 pthread_t thread_com, thread_ctrl;
-int sc, pid_ihm;
+int sc, pid_ihm, pid_main;
 
 void gest_ihm(int signum, siginfo_t * info, void * vide) {
 	printf("gest SIG_IHM %d\n", signum);
 }
 
 void *run_com(void *arg) {
-	int sc;
 	char response[1024], *env;
 	union sigval valeur;
-
 	memset(response, 0, 1024);
-	sc = *((int*) arg);
 
 	printf("thread com demarre :\n");
+
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-	while (1) {
+	while (TRUE) {
 		read_response(sc, response);
-		printf("com: recu reponse len %d : %s\n", strlen(response), response);
+
+		printf("com: recu reponse len %zu : %s\n", strlen(response), response);
 
 		env = malloc(strlen(response) + 1);
 		strcpy(env, response);
@@ -56,16 +55,16 @@ void *run_com(void *arg) {
 }
 
 void *run_ctrl(void *arg) {
-	printf("thread ctrl demarre %d, %d:\n", getpid(), SIG_COM);
+	printf("thread ctrl demarre :\n");
+
 	sigset_t sig_wait;
 	siginfo_t info;
-	char **tab = NULL, *response;
-	int size, true;
 	union sigval valeur;
+	char **tab = NULL, *response;
+	int size;
 
-	true = 1;
 
-	while (true) {
+	while (TRUE) {
 		sigemptyset(&sig_wait);
 		sigaddset(&sig_wait, SIG_COM);
 		if (sigwaitinfo(&sig_wait, &info) == -1) {
@@ -77,11 +76,16 @@ void *run_ctrl(void *arg) {
 
 		tab = string_to_arraystring(response, &size, '/');
 
+		if (!strcmp("IHM", tab[0])) {
+			printf("IHM OK\n");
+			pthread_cancel(thread_com);
+			break;
+		}
 		if (!strcmp(SORT, tab[0])) {
 			printf("SORT OK\n");
-			true = 0;
 			pthread_cancel(thread_com);
 			sigqueue(pid_ihm, SIGINT, valeur);
+			break;
 		}
 		if (!strcmp(TOUR, tab[0])) {
 			sigqueue(pid_ihm, SIG_IHM, valeur);
@@ -97,52 +101,57 @@ void *run_ctrl(void *arg) {
 
 int main(int argc, char** argv) {
 
-//	sigset_t mask;
-//	struct sigaction action;
-//
-//	action.sa_sigaction = gest_ihm;
-//	action.sa_flags = SA_SIGINFO | SA_RESTART;
-//
-//	sigfillset(&mask);
-//	if (sigprocmask(SIG_SETMASK, &mask, NULL) == -1) {
-//		perror("sigprocmask");
-//	}
-//
-//	sigemptyset(&action.sa_mask);
-//	if (sigaction(SIG_IHM, &action, NULL) < 0)
-//		fprintf(stderr, "SIG_IHM non intercepté \n");
-//
-//	sc = connex_socket("127.0.0.1", 2016);
-//	pid_ihm = fork();
-//
-//	if (pid_ihm == 0) { // fils proc IHM
-//
-//		sigdelset(&mask, SIG_IHM);
-//		sigdelset(&mask, SIGINT);
-//		if (sigprocmask(SIG_SETMASK, &mask, NULL) == -1) {
-//			perror("sigprocmask");
-//		}
-//
+	sigset_t mask;
+	struct sigaction action;
+
+	action.sa_sigaction = gest_ihm;
+	action.sa_flags = SA_SIGINFO | SA_RESTART;
+
+	sigfillset(&mask);
+	if (sigprocmask(SIG_SETMASK, &mask, NULL) == -1) {
+		perror("sigprocmask");
+	}
+
+	sigemptyset(&action.sa_mask);
+	if (sigaction(SIG_IHM, &action, NULL) < 0)
+		fprintf(stderr, "SIG_IHM non intercepté \n");
+
+	sc = connex_socket("127.0.0.1", 2016);
+	pid_main = getpid();
+	pid_ihm = fork();
+
+	if (pid_ihm == 0) { // fils proc IHM
+		printf("proc IHM demarre \n");
+
+		sigdelset(&mask, SIG_IHM);
+		sigdelset(&mask, SIGINT);
+		if (sigprocmask(SIG_SETMASK, &mask, NULL) == -1) {
+			perror("sigprocmask");
+		}
 //		ihm();
-//	} else {
-//		printf("pid IHM %d \n", pid_ihm);
-//	}
-//
-//	if (pthread_create(&thread_com, NULL, run_com, &sc) != 0) {
-//		perror("pthread_create \n");
-//		exit(1);
-//	}
-//	if (pthread_create(&thread_ctrl, NULL, run_ctrl, NULL) != 0) {
-//		perror("pthread_create \n");
-//		exit(1);
-//	}
-//
-//	pthread_join(thread_com, NULL);
-//	pthread_join(thread_ctrl, NULL);
-//
-//	wait(NULL);
-//	printf("Fin main\n");
+//		kill(pid_main, SIGINT);
+		return EXIT_SUCCESS;
+	} else {
+		printf("pid Main %d \n", pid_main);
+		printf("pid IHM %d \n", pid_ihm);
+	}
+
+	if (pthread_create(&thread_com, NULL, run_com, NULL) != 0) {
+		perror("pthread_create \n");
+		exit(1);
+	}
+	if (pthread_create(&thread_ctrl, NULL, run_ctrl, NULL) != 0) {
+		perror("pthread_create \n");
+		exit(1);
+	}
+
+	pthread_join(thread_com, NULL);
+	pthread_join(thread_ctrl, NULL);
+
+	wait(NULL);
+	printf("Fin main\n");
 
 	ihm();
+//	test();
 	return EXIT_SUCCESS;
 }

@@ -62,6 +62,14 @@ void init_plateau(plateau_t plateau) {
 	}
 }
 
+void bind_enigme_plateau(plateau_t p, enigme_t *e) {
+	int i;
+	for (i = 0; i < NB_ROBOT; ++i) {
+		p[e->robots[i].x][e->robots[i].y] |= CROBOT;
+	}
+	p[e->cible.x][e->cible.y] |= CCIBLE;
+}
+
 void parse_plateau(char* data, plateau_t plateau) {
 	int i, x, y, len;
 	char c;
@@ -78,15 +86,23 @@ void parse_plateau(char* data, plateau_t plateau) {
 		switch (c) {
 		case Haut:
 			plateau[x][y] |= CHMUR;
+			if (y != 0)
+				plateau[x][y - 1] |= CBMUR;
 			break;
 		case Bas:
 			plateau[x][y] |= CBMUR;
+			if (y != NB_CASE - 1)
+				plateau[x][y + 1] |= CHMUR;
 			break;
 		case Gauche:
 			plateau[x][y] |= CGMUR;
+			if (x != 0)
+				plateau[x - 1][y] |= CDMUR;
 			break;
 		case Droit:
 			plateau[x][y] |= CDMUR;
+			if (x != NB_CASE - 1)
+				plateau[x + 1][y] |= CGMUR;
 			break;
 		}
 		i += nb_carac_separator + (x / 10 + 1) + (y / 10 + 1) + 1;
@@ -109,24 +125,28 @@ void parse_enigme(char* data, enigme_t *enig) {
 		case 'r':
 			enig->robots[ROBOT_R].x = x;
 			enig->robots[ROBOT_R].y = y;
+			enig->robots[ROBOT_R].c = Rouge;
 			sprintf(enig->robots[ROBOT_R].path, "%srobot%c%s", ASSETS, c,
 			EXT_IMG);
 			break;
 		case 'b':
 			enig->robots[ROBOT_B].x = x;
 			enig->robots[ROBOT_B].y = y;
+			enig->robots[ROBOT_B].c = Bleu;
 			sprintf(enig->robots[ROBOT_B].path, "%srobot%c%s", ASSETS, c,
 			EXT_IMG);
 			break;
 		case 'j':
 			enig->robots[ROBOT_J].x = x;
 			enig->robots[ROBOT_J].y = y;
+			enig->robots[ROBOT_J].c = Jaune;
 			sprintf(enig->robots[ROBOT_J].path, "%srobot%c%s", ASSETS, c,
 			EXT_IMG);
 			break;
 		case 'v':
 			enig->robots[ROBOT_V].x = x;
 			enig->robots[ROBOT_V].y = y;
+			enig->robots[ROBOT_V].c = Vert;
 			sprintf(enig->robots[ROBOT_V].path, "%srobot%c%s", ASSETS, c,
 			EXT_IMG);
 			break;

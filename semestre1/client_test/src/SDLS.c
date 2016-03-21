@@ -1,7 +1,7 @@
 
 #include<stdio.h>
 #include "../headers/ihm.h"
-// Version 1.1
+
 SDL_Texture* SDLS_loadTexture(char * filename, SDL_Renderer *ren) {
 	SDL_Texture *texture = 0;
 	SDL_Surface *loadedImage = 0;
@@ -53,7 +53,7 @@ void SDLS_affiche_image(char * fname, SDL_Renderer * ren, int x, int y) {
 	SDL_Texture * tex = 0;
 	SDL_Rect dst;
 
-	tex = SDLS_loadTexture(fname, ren);
+	tex = IMG_LoadTexture(ren,fname);
 	if (tex == 0)
 		return;
 
@@ -103,6 +103,6 @@ void SDLs_dessin(SDL_Texture * tex, SDL_Renderer * ren, int x, int y) {
 
 	// Affichage
 	SDL_RenderCopy(ren, tex, NULL, &dst);
-	SDL_RenderPresent(ren);
+//	SDL_RenderPresent(ren);
 }
 
