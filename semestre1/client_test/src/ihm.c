@@ -14,6 +14,10 @@
 
 static SDL_Texture *empty_Tx;
 char requete[REQUETE_SIZE];
+extern plateau_t pl;
+extern enigme_t enigme;
+extern int coupure;
+bool_t quit = FALSE;
 
 bool_t estDirection(enigme_t *e, SDL_MouseMotionEvent* p, int selected, int x,
 		int y) {
@@ -26,6 +30,18 @@ void onclickReset() {
 }
 void onclickSend(char* message) {
 	printf("send %s \n", message);
+
+}
+
+
+void test(int d){
+	if( d & CHMUR) printf("CHMUR OK \n");
+	if( d & CBMUR) printf("CBMUR OK \n");
+	if( d & CGMUR) printf("CGMUR OK \n");
+	if( d & CDMUR) printf("CDMUR OK \n");
+	if( d & CROBOT) printf("CROBOT OK \n");
+	if( d & CSMUR) printf("CSMUR OK \n");
+
 }
 
 bool_t estContenu(SDL_Rect *rect, SDL_MouseMotionEvent* p) {
@@ -37,6 +53,7 @@ bool_t estContenu(SDL_Rect *rect, SDL_MouseMotionEvent* p) {
 }
 void update_pos_robot(plateau_t p, robot_t *r, Direction d) {
 	p[r->x][r->y] &= ~CROBOT;
+	test(p[0][0]);
 	switch (d) {
 	case Haut:
 		while (!(p[r->x][r->y] & CHMUR) && r->y > 0
@@ -118,18 +135,19 @@ void awaitLoading(SDL_Renderer *ren) {
 	SDL_Rect dst_loading = { 12 * CASE, 12 * CASE, 64, 64 };
 	SDL_Rect src_loading = { 0, 0, 64, 64 };
 
-	int i;
-	for (i = 0; i < 5; ++i) {
+	int i = 0;
+	coupure = 1;
+	while (coupure) {
 		src_loading.x = 2 * 64;
 		SDL_RenderCopy(ren, loading_Tx, &src_loading, &dst_loading);
-		src_loading.x = (i % 2) * 64;
+		src_loading.x = i * 64;
 		SDL_RenderCopy(ren, loading_Tx, &src_loading, &dst_loading);
 		SDL_RenderPresent(ren);
 		SDL_Delay(200);
+		i = (i + 1) % 2;
 	}
 
 }
-
 SDL_Texture* txt2Texture(SDL_Renderer * ren, TTF_Font *font, SDL_Color *color,
 		char* msg) {
 	SDL_Surface *surf;
@@ -141,8 +159,42 @@ SDL_Texture* txt2Texture(SDL_Renderer * ren, TTF_Font *font, SDL_Color *color,
 	return tex;
 }
 
+void awaitLoadingTexte(SDL_Renderer *ren, char* msg) {
+//SDLS_init(768, 608, &win, &ren);
+	SDL_Texture *msg_Tx;
+	SDL_Texture *emptyInput_Tx = IMG_LoadTexture(ren, "assets/inputField.png");
+	SDL_Rect rectSrc = { 0, 32, 96, 32 };
+	SDL_Rect rectDst = { 0, 576, 224, 32 };
+	TTF_Font *font = TTF_OpenFont("assets/dayrom.TTF", 20);
+	SDL_Color color = { 255, 0, 0, 0 };
+
+	msg_Tx = txt2Texture(ren, font, &color, msg);
+	SDL_RenderCopy(ren, emptyInput_Tx, &rectSrc, &rectDst);
+	rectDst.w -= 64;
+	SDL_RenderCopy(ren, msg_Tx, NULL, &rectDst);
+	SDL_RenderPresent(ren);
+
+	SDL_Rect rectDst2 = { 160, 576, 64, 32 };
+	SDL_Rect rectSrc2 = { 0, 0, 64, 32 };
+	int i = 0;
+	char *ps;
+	coupure = 1;
+	while (coupure) {
+		ps = i == 0 ? "." : i == 1 ? "..." : "....";
+		msg_Tx = txt2Texture(ren, font, &color, ps);
+		SDL_RenderCopy(ren, emptyInput_Tx, &rectSrc2, &rectDst2);
+		SDL_RenderCopy(ren, msg_Tx, NULL, &rectDst2);
+		SDL_RenderPresent(ren);
+		i = (i + 1) % 3;
+		SDL_Delay(500);
+	}
+	SDL_RenderCopy(ren, emptyInput_Tx, &rectSrc, &rectDst);
+	SDL_RenderPresent(ren);
+	TTF_CloseFont(font);
+}
+
 void displayAccueil(SDL_Window *win, SDL_Renderer *ren) {
-	bool_t quit = FALSE;
+	bool_t quitAccueil = FALSE;
 	SDL_Event event;
 	SDL_Color color = { 0, 0, 0, 0 };
 	if (TTF_Init() == -1) {
@@ -165,7 +217,7 @@ void displayAccueil(SDL_Window *win, SDL_Renderer *ren) {
 	shift = updateInput = FALSE;
 	SDLS_affiche_image(ACC, ren, 0, 0);
 
-	while (!quit) {
+	while (!quitAccueil) {
 		SDL_WaitEvent(&event);
 		switch (event.type) {
 		case SDL_KEYDOWN:
@@ -212,10 +264,11 @@ void displayAccueil(SDL_Window *win, SDL_Renderer *ren) {
 				} else {
 					memset(requete, 0, REQUETE_SIZE);
 					sprintf(requete, "%s/%s/\n", CONNEXION, name);
+
 					onclickSend(requete);
 					awaitLoading(ren);
 //					TODO
-					quit = TRUE;
+					quitAccueil = TRUE;
 				}
 			}
 			break;
@@ -224,6 +277,7 @@ void displayAccueil(SDL_Window *win, SDL_Renderer *ren) {
 
 		case SDL_QUIT:
 			quit = TRUE;
+			quitAccueil = TRUE;
 			break;
 		}
 		if (updateInput) {
@@ -242,13 +296,6 @@ void displayAccueil(SDL_Window *win, SDL_Renderer *ren) {
 	TTF_CloseFont(font);
 }
 
-void aff() {
-	while (1) {
-		printf(".");
-		sleep(1);
-		fflush(stdout);
-	}
-}
 void cpyPlateau(plateau_t plsrc, plateau_t pldst) {
 	int i, j;
 	for (i = 0; i < NB_CASE; i++) {
@@ -275,6 +322,7 @@ int estEntier(char *s) {
 	return -1;
 }
 
+
 int ihm1() {
 	SDL_Window *win = 0;
 	SDL_Renderer *ren = 0;
@@ -289,11 +337,10 @@ int ihm1() {
 	SDL_Rect rectCoup = { 12 * CASE, 17 * CASE, CASE * 4, 64 };
 	SDL_Rect rectEmpty = { 0, 0, 64, 32 };
 
-	plateau_t pl, oldPl;
-	enigme_t eni, oldEni;
+	plateau_t oldPl;
+	enigme_t oldEni;
 	Direction dr;
 	int selected;
-	bool_t quit = FALSE;
 	bool_t focusCoup = FALSE;
 	bool_t phaseEchere = FALSE;
 	bool_t focusChat = FALSE;
@@ -305,8 +352,6 @@ int ihm1() {
 	char* labelCoup = "Veuillez entrer le nombre de coups :";
 
 	int x, y, i;
-	char* ch = "(0,0,H)(0,0,G)(0,0,B)(0,0,D)(2,0,H)";
-	char* ch1 = "(0r,0r,1b,1b,12j,2j,3v,13v,4c,4c,B)";
 
 	/*initialisation*/
 	SDLS_init(768, 608, &win, &ren);
@@ -322,19 +367,20 @@ int ihm1() {
 	empty_Tx = IMG_LoadTexture(ren, "assets/inputField.png");
 	font = TTF_OpenFont("assets/dayrom.TTF", 12);
 
-	init_plateau(pl);
-	parse_plateau(ch, pl);
-	parse_enigme(ch1, &eni);
-	bind_enigme_plateau(pl, &eni);
-	oldEni = eni;
+	displayAccueil(win, ren);
+
+	SDLS_affiche_image("assets/pl.png", ren, 0, 0);
+
+	awaitLoadingTexte(ren, "attente de session ");
+	bind_enigme_plateau(pl, &enigme);
+	display_plateau(ren, pl);
+	awaitLoadingTexte(ren, "attente d'enigme ");
+	display_enigme(ren, &enigme);
+
+	oldEni = enigme;
 	cpyPlateau(pl, oldPl);
 	selected = -1;
 	dr = NONE;
-
-	displayAccueil(win, ren);
-	SDLS_affiche_image("assets/pl.png", ren, 0, 0);
-	display_plateau(ren, pl);
-	display_enigme(ren, &eni);
 
 	tmp_Tx = txt2Texture(ren, font, &color, labelCoup);
 	SDL_QueryTexture(tmp_Tx, NULL, NULL, &rectLabelCoup.w, &rectLabelCoup.h);
@@ -357,13 +403,13 @@ int ihm1() {
 			if (estContenu(&rectReset, &event.motion)) {
 				SDL_ShowSimpleMessageBox(0, "DEBUG", "RESET", win);
 				if (strlen(moves) > 0) {
-					eni = oldEni;
+					enigme = oldEni;
 					cpyPlateau(oldPl, pl);
 					memset(moves, 0, sizeof(moves));
 					sprintf(coups, "%d", 0);
 
 					display_plateau(ren, pl);
-					display_enigme(ren, &eni);
+					display_enigme(ren, &enigme);
 					tmp_Tx = txt2Texture(ren, font, &color, coups);
 					displayCoup(ren, tmp_Tx, rectCoup, rectEmpty);
 					SDL_RenderPresent(ren);
@@ -379,32 +425,32 @@ int ihm1() {
 			x = event.motion.x / CASE;
 			y = event.motion.y / CASE;
 			for (i = 0; i < NB_ROBOT; ++i) {
-				if (eni.robots[i].x == x && eni.robots[i].y == y)
+				if (enigme.robots[i].x == x && enigme.robots[i].y == y)
 					selected = i;
 			}
 
 			if (selected > -1) {
-				dr = estDirection(&eni, &event.motion, selected, -1, 0)
+				dr = estDirection(&enigme, &event.motion, selected, -1, 0)
 						== TRUE ? Gauche : dr;
-				dr = estDirection(&eni, &event.motion, selected, 1, 0) == TRUE ?
-						Droit : dr;
-				dr = estDirection(&eni, &event.motion, selected, 0, -1)
+				dr = estDirection(&enigme, &event.motion, selected, 1, 0)
+						== TRUE ? Droit : dr;
+				dr = estDirection(&enigme, &event.motion, selected, 0, -1)
 						== TRUE ? Haut : dr;
-				dr = estDirection(&eni, &event.motion, selected, 0, 1) == TRUE ?
-						Bas : dr;
+				dr = estDirection(&enigme, &event.motion, selected, 0, 1)
+						== TRUE ? Bas : dr;
 			}
 
 			if (dr != NONE) {
-				update_pos_robot(pl, &eni.robots[selected], dr);
+				update_pos_robot(pl, &enigme.robots[selected], dr);
 				/* update move */
-				move[0] = eni.robots[selected].c;
+				move[0] = enigme.robots[selected].c;
 				move[1] = dr;
 				strcat(moves, move);
 				sprintf(coups, "%d", ((int) (strlen(moves) / 2)));
 
 				// update view améliorer en ne pas reafficher les elts statique
 				display_plateau(ren, pl);
-				display_enigme(ren, &eni);
+				display_enigme(ren, &enigme);
 				tmp_Tx = txt2Texture(ren, font, &color, coups);
 				displayCoup(ren, tmp_Tx, rectCoup, rectEmpty);
 

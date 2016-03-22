@@ -47,7 +47,7 @@ void test_parse() {
 	plateau_t pl;
 
 	char* ch = "(13,4,H)(3,14,G)(2,6,H)";
-	char* ch1 = "(13r,5r,1b,1b,12j,2j,3v,13v,4c,4c,R)";
+	char* ch1 = "(13r,5r,2b,2b,12j,2j,3v,13v,4c,4c,R)";
 	char* ch2 = "6(saucisse,223)(brouette,0)";
 
 	parse_enigme(ch1, &eni);
@@ -83,17 +83,14 @@ void test_comm() {
 	free_table(tab, size);
 
 }
-void test(){
-	int d = 0 ;
-	d |= CROBOT;
-	d |= CHMUR;
-	d &= ~CROBOT;
-
-	if( d & CHMUR) printf("CHMUR OK \n");
-	if( d & CBMUR) printf("CBMUR OK \n");
-	if( d & CGMUR) printf("CGMUR OK \n");
-	if( d & CDMUR) printf("CDMUR OK \n");
-	if( d & CROBOT) printf("CROBOT OK \n");
-	if( d & CSMUR) printf("CSMUR OK \n");
-
-}
+//void test(int d){
+//
+//
+//	if( d & CHMUR) printf("CHMUR OK \n");
+//	if( d & CBMUR) printf("CBMUR OK \n");
+//	if( d & CGMUR) printf("CGMUR OK \n");
+//	if( d & CDMUR) printf("CDMUR OK \n");
+//	if( d & CROBOT) printf("CROBOT OK \n");
+//	if( d & CSMUR) printf("CSMUR OK \n");
+//
+//}
