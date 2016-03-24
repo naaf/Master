@@ -4,5 +4,5 @@
 
 USER_OBJS :=
 
-LIBS := -lpthread -lrt
+LIBS := -lpthread -lrt -lSDL2 -lSDL2_image -lSDL2_ttf
 
