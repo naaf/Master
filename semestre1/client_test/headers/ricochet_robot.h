@@ -97,6 +97,7 @@ typedef struct {
 } response_t;
 
 void init_plateau(plateau_t plateau);
+void cpyPlateau(plateau_t plsrc, plateau_t pldst);
 void bind_enigme_plateau(plateau_t p, enigme_t *e);
 
 response_t parse(char* data);
@@ -107,7 +108,7 @@ void parse_bilan(char* data, bilan_t* bil);
 char** string_to_arraystring(char* data, int* size, char separator);
 void free_table(char** tab, int size);
 
-int adduser(char* name, list_user_t* list_users);
+int adduser(char* name,int score, list_user_t* list_users);
 int removeuser(char* name, list_user_t* list_users);
 user_t* getuser(char* name, list_user_t* list_users);
 void free_user(user_t *user);

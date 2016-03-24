@@ -10,7 +10,7 @@
 #include "../headers/ricochet_robot.h"
 #include "../headers/communication.h"
 #include "../headers/ihm.h"
-
+extern bilan_t bilan;
 void test_aff(list_user_t* l) {
 	user_t *cur;
 	cur = l->first;
@@ -26,9 +26,9 @@ void test_users() {
 	bil.list_users.nb = 0;
 	bil.list_users.first = NULL;
 
-	adduser("ashraf", &bil.list_users);
-	adduser("nasser", &bil.list_users);
-	adduser("ali", &bil.list_users);
+	adduser("ashraf",0, &bil.list_users);
+	adduser("nasser",0, &bil.list_users);
+	adduser("ali",0, &bil.list_users);
 
 	test_aff(&bil.list_users);
 
@@ -83,14 +83,25 @@ void test_comm() {
 	free_table(tab, size);
 
 }
-//void test(int d){
-//
-//
-//	if( d & CHMUR) printf("CHMUR OK \n");
-//	if( d & CBMUR) printf("CBMUR OK \n");
-//	if( d & CGMUR) printf("CGMUR OK \n");
-//	if( d & CDMUR) printf("CDMUR OK \n");
-//	if( d & CROBOT) printf("CROBOT OK \n");
-//	if( d & CSMUR) printf("CSMUR OK \n");
-//
-//}
+void affCase(int d) {
+	if (d & CHMUR)
+		printf("CHMUR OK \n");
+	if (d & CBMUR)
+		printf("CBMUR OK \n");
+	if (d & CGMUR)
+		printf("CGMUR OK \n");
+	if (d & CDMUR)
+		printf("CDMUR OK \n");
+	if (d & CROBOT)
+		printf("CROBOT OK \n");
+	if (d & CSMUR)
+		printf("CSMUR OK \n");
+
+}
+void test(int d) {
+	printf("test iciiii\n");
+	parse_bilan("6(saucisse,223)(brouette,0)", &bilan);
+	printf("aff\n");
+	test_aff(&bilan.list_users);
+
+}

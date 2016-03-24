@@ -30,23 +30,25 @@ int sc, pid_ihm, pid_main;
 plateau_t pl;
 enigme_t enigme;
 bilan_t bilan;
-
 int coupure;
+char msg_signal[128];
 
-void gest_ihm(int signum, siginfo_t * info, void * vide) {
-	coupure = 0;
-	printf("gest SIG_IHM %d\n", signum);
-}
+void gest_ihm(int signum, siginfo_t * info, void * vide);
 
 void traitement(char **tab) {
 	union sigval valeur;
 
+	if (tab == NULL) {
+		printf("ERROR traitement commande NULL inconnu \n");
+		return;
+	}
+
 	if (!strcmp(BIENVENUE, tab[0])) {
 		// casser l'attente TODO
-		valeur.sival_int = PHASE_CONNEXION;
+		valeur.sival_int = FIN_CONNEXION;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(CONNECTE, tab[0])) {
-		adduser(tab[1], &bilan.list_users);
+		adduser(tab[1], 0, &bilan.list_users);
 	} else if (!strcmp(DECONNEXION, tab[0])) {
 		removeuser(tab[1], &bilan.list_users);
 	} else if (!strcmp(SESSION, tab[0])) {
@@ -57,28 +59,58 @@ void traitement(char **tab) {
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(VAINQUEUR, tab[0])) {
 		parse_bilan(tab[1], &bilan);
+		valeur.sival_int = FIN_SESSION;
+		memset(msg_signal, 0, sizeof(msg_signal));
+		strcpy(msg_signal, "FIN SESSION");
+		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(TOUR, tab[0])) {
-		//TODO
+		memset(msg_signal, 0, sizeof(msg_signal));
+		strcpy(msg_signal, "PHASE REFLEXTION");
 		parse_enigme(tab[1], &enigme);
 		parse_bilan(tab[2], &bilan);
 		valeur.sival_int = PHASE_REFLEX;
 		sigqueue(pid_main, SIG_IHM, valeur);
 
 	} else if (!strcmp(TUASTROUVE, tab[0])) {
-		//TODO
+		memset(msg_signal, 0, sizeof(msg_signal));
+		strcpy(msg_signal, "Tu as trouve solution");
+		valeur.sival_int = FIN_REFLEX | SIGALEMENT;
+		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(ILATROUVE, tab[0])) {
 		user_t *u = getuser(tab[1], &bilan.list_users);
 		u->nb_coups = atoi(tab[2]);
 
+		memset(msg_signal, 0, sizeof(msg_signal));
+		sprintf(msg_signal, "%s as trouve solution en %d coups", tab[1],
+				tab[2]);
+		valeur.sival_int = FIN_REFLEX | SIGALEMENT;
+
 	} else if (!strcmp(FINREFLEXION, tab[0])) {
-		//TODO
+		memset(msg_signal, 0, sizeof(msg_signal));
+		strcpy(msg_signal, "Fin reflexion timeout");
+		valeur.sival_int = FIN_REFLEX;
+		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(VALIDATION, tab[0])) {
-
+		memset(msg_signal, 0, sizeof(msg_signal));
+		strcpy(msg_signal, "enchere Valide");
+		valeur.sival_int = 0;
+		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(ECHEC, tab[0])) {
-
+		memset(msg_signal, 0, sizeof(msg_signal));
+		strcpy(msg_signal, "ECHEC enchere");
+		valeur.sival_int = 0;
+		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(NOUVELLEENCHERE, tab[0])) {
+		memset(msg_signal, 0, sizeof(msg_signal));
+		sprintf(msg_signal, "New enchere %s %s", tab[1], tab[2]);
+		valeur.sival_int = 0;
+		sigqueue(pid_main, SIG_IHM, valeur);
 
 	} else if (!strcmp(FINENCHERE, tab[0])) {
+		memset(msg_signal, 0, sizeof(msg_signal));
+		strcpy(msg_signal, "FIN enchere");
+		valeur.sival_int = FIN_ENCHERE;
+		sigqueue(pid_main, SIG_IHM, valeur);
 
 	} else if (!strcmp(SASOLUTION, tab[0])) {
 		user_t *u = getuser(tab[1], &bilan.list_users);
@@ -96,7 +128,7 @@ void traitement(char **tab) {
 	} else if (!strcmp(TROPLONG, tab[0])) {
 
 	} else if (!strcmp(CHAT, tab[0])) {
-
+		printf("%s : %s", tab[1], tab[2]);
 	} else {
 		printf("ERROR de protocol %s inconnu \n", tab[0]);
 	}
@@ -124,6 +156,7 @@ void *run_chat(void *arg) {
 		printf("entrez votre msg : ");
 		fflush(stdout);
 		fgets(entree, sizeof(entree), stdin);
+		printf("envois : %s", entree);
 		send_request(sc, 2, CHAT, entree);
 		memset(entree, 0, strlen(entree) + 2);
 	}
@@ -169,6 +202,9 @@ void *run_com(void *arg) {
 
 int main(int argc, char** argv) {
 
+	pid_main = getpid();
+	printf("pid Main %d SIG_IHM %d\n", pid_main, SIG_IHM);
+
 	sigset_t mask;
 	struct sigaction action;
 
@@ -186,30 +222,32 @@ int main(int argc, char** argv) {
 	if (sigaction(SIG_IHM, &action, NULL) < 0) {
 		fprintf(stderr, "SIG_IHM non intercepté \n");
 	}
-
-	pid_main = getpid();
-	printf("pid Main %d SIG_IHM %d\n", pid_main, SIG_IHM);
-
-	if (argc == 3) {
-		sc = connex_socket(argv[1], atoi(argv[2]));
-	} else {
-		sc = connex_socket(IP_ADDR, PORT_SRV);
-	}
-
-	if (pthread_create(&thread_com, NULL, run_com, NULL) != 0) {
-		perror("pthread_create \n");
-		exit(1);
-	}
-	if (pthread_create(&thread_chat, NULL, run_chat, NULL) != 0) {
-		perror("pthread_create \n");
-		exit(1);
-	}
+//
+//
+//	if (argc == 3) {
+//		sc = connex_socket(argv[1], atoi(argv[2]));
+//	} else {
+//		sc = connex_socket(IP_ADDR, PORT_SRV);
+//	}
+//
+//	if (pthread_create(&thread_com, NULL, run_com, NULL) != 0) {
+//		perror("pthread_create \n");
+//		exit(1);
+//	}
+//	if (pthread_create(&thread_chat, NULL, run_chat, NULL) != 0) {
+//		perror("pthread_create \n");
+//		exit(1);
+//	}
 
 	/*--------------------IHM----------------------*/
 	ihm();
+//	test();
 //	/*--------------------Fin de main----------------------*/
-	pthread_join(thread_com, NULL);
-	pthread_join(thread_chat, NULL);
+//	pthread_join(thread_com, NULL);
+//	pthread_join(thread_chat, NULL);
+	if (bilan.list_users.nb != 0) {
+		free_list_user(&bilan.list_users);
+	}
 	printf("Fin main\n");
 
 	return EXIT_SUCCESS;

@@ -15,19 +15,37 @@
 #include "communication.h"
 #include "SDLS.h"
 
-
 #define CASE 32
 #define NB_CASE 16
 #define HEIGHT ( CASE * NB_CASE)
 #define WIDTH ( CASE * NB_CASE)
 
-#define PHASE_CONNEXION 0x0001
-#define PHASE_SESSION	0x0002
-#define PHASE_REFLEX	0x0004
-#define PHASE_ENCHERE	0x0008
-#define PHASE_RESO		0x0010
+#define FIN_CONNEXION 0x0001
+#define FIN_SESSION	0x0002
+#define FIN_REFLEX	0x0004
+#define FIN_ENCHERE	0x0008
+#define FIN_RESO	0x0010
 
+#define UPDATE_U	0x0020
+#define UPDATE_L	0x0040
+#define SIGALEMENT	0x0080
+
+#define PHASE_SESSION	0x0100
+#define PHASE_REFLEX	0x0200
+#define PHASE_ENCHERE	0x0400
+#define PHASE_RESO		0x0800
+
+bool_t estDirection(enigme_t *e, SDL_MouseMotionEvent* p, int selected, int x,
+		int y);
+bool_t estContenu(SDL_Rect *rect, SDL_MouseMotionEvent* p);
+void update_pos_robot(plateau_t p, robot_t *r, Direction d);
+
+int awaitLoading();
+int awaitLoadingTexte(char* msg);
 void ihm();
-void display_plateau(SDL_Renderer *ren, plateau_t pl);
-void display_enigme(SDL_Renderer *ren, enigme_t *e);
+void display_plateau(plateau_t pl);
+void display_enigme(enigme_t *e);
+void display_bilan(bilan_t *b);
+void displayAccueil();
+void displayCoup(SDL_Texture *tmp_Tx, SDL_Rect srcR, SDL_Rect *emptyR);
 #endif /* IHM_H_ */

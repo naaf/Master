@@ -25,7 +25,9 @@ char** string_to_arraystring(char* data, int* size, char separator) {
 			*size = *size + 1;
 		}
 	}
-
+	if (*size == 0) {
+		return NULL;
+	}
 	tab = malloc((*size) * sizeof(char*));
 	*size = 0;
 	for (i = 0, cptLettre = 1; i < lenght; ++i, cptLettre++) {
@@ -61,7 +63,14 @@ void init_plateau(plateau_t plateau) {
 		}
 	}
 }
-
+void cpyPlateau(plateau_t plsrc, plateau_t pldst) {
+	int i, j;
+	for (i = 0; i < NB_CASE; i++) {
+		for (j = 0; j < NB_CASE; j++) {
+			pldst[i][j] = plsrc[i][j];
+		}
+	}
+}
 void bind_enigme_plateau(plateau_t p, enigme_t *e) {
 	int i;
 	for (i = 0; i < NB_ROBOT; ++i) {
@@ -192,7 +201,7 @@ void parse_bilan(char* data, bilan_t* bil) {
 			if (getuser(buffer, &bil->list_users) != NULL) {
 				printf("mod %s %d\n", buffer, score);
 			} else {
-				adduser(buffer, &(bil->list_users));
+				adduser(buffer,score, &(bil->list_users));
 				printf("cre %s %d\n", buffer, score);
 			}
 
@@ -205,13 +214,13 @@ void parse_bilan(char* data, bilan_t* bil) {
 	}
 }
 
-int adduser(char* name, list_user_t* list_users) {
+int adduser(char* name,int score, list_user_t* list_users) {
 	if (getuser(name, list_users)) {
 		return 0;
 	}
 	user_t *new = (user_t*) malloc(sizeof(user_t));
 	strncpy(new->name, name, NAME_SIZE);
-	new->score = 0;
+	new->score = score;
 	new->nb_coups = 0;
 	new->solution = NULL;
 

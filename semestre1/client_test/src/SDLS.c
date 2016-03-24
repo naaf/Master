@@ -1,4 +1,3 @@
-
 #include<stdio.h>
 #include "../headers/ihm.h"
 
@@ -53,7 +52,7 @@ void SDLS_affiche_image(char * fname, SDL_Renderer * ren, int x, int y) {
 	SDL_Texture * tex = 0;
 	SDL_Rect dst;
 
-	tex = IMG_LoadTexture(ren,fname);
+	tex = IMG_LoadTexture(ren, fname);
 	if (tex == 0)
 		return;
 
@@ -105,4 +104,12 @@ void SDLs_dessin(SDL_Texture * tex, SDL_Renderer * ren, int x, int y) {
 	SDL_RenderCopy(ren, tex, NULL, &dst);
 //	SDL_RenderPresent(ren);
 }
+SDL_Texture* txt2Texture(SDL_Renderer *ren,TTF_Font *font, SDL_Color *color, char* msg) {
+	SDL_Surface *surf;
+	SDL_Texture *tex;
+	surf = TTF_RenderText_Blended(font, msg, *color);
+	tex = SDL_CreateTextureFromSurface(ren, surf);
 
+	SDL_FreeSurface(surf);
+	return tex;
+}
