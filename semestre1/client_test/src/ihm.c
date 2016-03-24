@@ -9,7 +9,6 @@
 #include <signal.h>
 
 #include "../headers/ihm.h"
-#include"../headers/EntreeSortie.h"
 #define MAP "assets/map.bmp"
 #define ACC "assets/accueil.png"
 

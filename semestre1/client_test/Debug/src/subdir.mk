@@ -4,7 +4,6 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../src/EntreeSortie.c \
 ../src/SDLS.c \
 ../src/communication.c \
 ../src/ihm.c \
@@ -14,7 +13,6 @@ C_SRCS += \
 ../src/visualiser.c 
 
 OBJS += \
-./src/EntreeSortie.o \
 ./src/SDLS.o \
 ./src/communication.o \
 ./src/ihm.o \
@@ -24,7 +22,6 @@ OBJS += \
 ./src/visualiser.o 
 
 C_DEPS += \
-./src/EntreeSortie.d \
 ./src/SDLS.d \
 ./src/communication.d \
 ./src/ihm.d \
