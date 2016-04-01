@@ -113,6 +113,10 @@ void parse_plateau(char* data, plateau_t plateau) {
 			if (x != NB_CASE - 1)
 				plateau[x + 1][y] |= CGMUR;
 			break;
+		default:
+			fprintf(stderr, "ERREUR Parse CASE %d %d type %c -> inconnu\n", x,
+					y, c);
+			break;
 		}
 		i += nb_carac_separator + (x / 10 + 1) + (y / 10 + 1) + 1;
 	}
@@ -201,7 +205,7 @@ void parse_bilan(char* data, bilan_t* bil) {
 			if (getuser(buffer, &bil->list_users) != NULL) {
 				printf("mod %s %d\n", buffer, score);
 			} else {
-				adduser(buffer,score, &(bil->list_users));
+				adduser(buffer, score, &(bil->list_users));
 				printf("cre %s %d\n", buffer, score);
 			}
 
@@ -214,7 +218,7 @@ void parse_bilan(char* data, bilan_t* bil) {
 	}
 }
 
-int adduser(char* name,int score, list_user_t* list_users) {
+int adduser(char* name, int score, list_user_t* list_users) {
 	if (getuser(name, list_users)) {
 		return 0;
 	}

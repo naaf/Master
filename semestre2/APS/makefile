@@ -10,6 +10,8 @@ CFLAGS =-W -Wall -ansi -pedantic -Iinclude
 
 .PHONY: all clean 
 
+APS : aps
+
 all : aps
 
 test :

@@ -13,7 +13,6 @@
 #define ACC "assets/accueil.png"
 
 static SDL_Texture *empty_Tx;
-char requete[REQUETE_SIZE];
 extern plateau_t pl;
 extern enigme_t enigme;
 extern bilan_t bilan;
@@ -96,6 +95,22 @@ int awaitLoading() {
 
 	}
 	return quit;
+}
+void displayMsg(char* msg) {
+	SDL_Rect rectSrc = { 0, 32, 96, 32 };
+	SDL_Rect rectDst = { 0, 576, 224, 32 };
+	SDL_Color color = { 255, 0, 0, 0 };
+	SDL_Texture *msg_Tx;
+	SDL_Texture *emptyInput_Tx = IMG_LoadTexture(ren, "assets/inputField.png");
+	TTF_Font *font = TTF_OpenFont("assets/dayrom.TTF", 20);
+	msg_Tx = txt2Texture(ren, font, &color, msg);
+	SDL_RenderCopy(ren, emptyInput_Tx, &rectSrc, &rectDst);
+	rectDst.w -= 64;
+	SDL_QueryTexture(msg_Tx, NULL, NULL, &rectDst.w,
+						&rectDst.h);
+	SDL_RenderCopy(ren, msg_Tx, NULL, &rectDst);
+	SDL_RenderPresent(ren);
+	TTF_CloseFont(font);
 }
 
 int awaitLoadingTexte(char* msg) {
@@ -340,12 +355,9 @@ void displayAccueil() {
 				if (len <= 0) {
 					SDL_ShowSimpleMessageBox(0, "ERROR", "nom vide", win);
 				} else {
-					memset(requete, 0, REQUETE_SIZE);
-					sprintf(requete, "%s/%s/\n", CONNEXION, name);
-
 //					TODO send REquete
+					//send_request(sc,2,CONNEXION,name);
 					awaitLoading();
-//					TODO
 					quitAccueil = TRUE;
 				}
 			}
@@ -442,7 +454,7 @@ int ihm1() {
 
 	SDLS_affiche_image("assets/pl.png", ren, 0, 0);
 	init_plateau(pl); // TODO Sup
-	parse_plateau("(3,4,H)(3,4,G)(12,6,H)(1,4,H)(9,4,G)(15,6,H)", pl); // TODO sup
+	parse_plateau("(3,4,H)(3,4,G)(12,6,H)(1,4,H)(9,4,G)(15,6,H)(15,6,T)", pl); // TODO sup
 	if (awaitLoadingTexte("attente de session ")) {
 		goto fin;
 	}
@@ -457,6 +469,13 @@ int ihm1() {
 	display_enigme(&enigme);
 	display_bilan(&bilan);
 
+	displayMsg("PHASE REFLEXION"); //TODO
+	SDL_Delay(1000);
+	displayMsg("PHASE ENCHERE");
+	SDL_Delay(1000);
+	displayMsg("PHASE SOLUTION");
+	SDL_Delay(1000);
+	//TODO
 	oldEni = enigme;
 	cpyPlateau(pl, oldPl);
 	selected = -1;

@@ -48,7 +48,7 @@ void traitement(char **tab) {
 		valeur.sival_int = FIN_CONNEXION;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(CONNECTE, tab[0])) {
-		adduser(tab[1], 0, &bilan.list_users);
+		adduser(tab[1], 0, &bilan.list_users);//TODO
 	} else if (!strcmp(DECONNEXION, tab[0])) {
 		removeuser(tab[1], &bilan.list_users);
 	} else if (!strcmp(SESSION, tab[0])) {
