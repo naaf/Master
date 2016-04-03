@@ -98,6 +98,7 @@ typedef struct {
 
 void init_plateau(plateau_t plateau);
 void cpyPlateau(plateau_t plsrc, plateau_t pldst);
+void cpyEnigme(enigme_t* src, enigme_t *dst);
 void bind_enigme_plateau(plateau_t p, enigme_t *e);
 
 response_t parse(char* data);

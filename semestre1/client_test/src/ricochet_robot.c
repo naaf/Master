@@ -63,6 +63,20 @@ void init_plateau(plateau_t plateau) {
 		}
 	}
 }
+void cpyEnigme(enigme_t* src, enigme_t *dst) {
+	int i;
+	dst->cible.c = src->cible.c;
+	dst->cible.x = src->cible.x;
+	dst->cible.y = src->cible.y;
+	strcpy(dst->cible.path, src->cible.path);
+	for (i = 0; i < NB_ROBOT; i++) {
+		strcpy(dst->robots[i].path, src->robots[i].path);
+		dst->robots[i].c = src->robots[i].c;
+		dst->robots[i].x = src->robots[i].x;
+		dst->robots[i].y = src->robots[i].y;
+	}
+}
+
 void cpyPlateau(plateau_t plsrc, plateau_t pldst) {
 	int i, j;
 	for (i = 0; i < NB_CASE; i++) {
@@ -185,7 +199,7 @@ void parse_bilan(char* data, bilan_t* bil) {
 
 	if (len < 11)
 		return;
-
+	free_list_user(&bil->list_users);
 	sscanf(data, "%d", &(bil->current_tour));
 	memset(buffer, 0, NAME_SIZE);
 	int cnom;
@@ -275,7 +289,7 @@ void free_list_user(list_user_t* list_users) {
 	user_t *pr, *cur;
 	cur = list_users->first;
 	pr = NULL;
-	while (cur != NULL) {
+	while (cur != NULL && list_users->nb > 0) {
 		pr = cur;
 		cur = cur->next;
 		free_user(pr);

@@ -10,7 +10,7 @@ C_SRCS += \
 ../src/main.c \
 ../src/ricochet_robot.c \
 ../src/test.c \
-../src/visualiser.c 
+../src/visualisation.c 
 
 OBJS += \
 ./src/SDLS.o \
@@ -19,7 +19,7 @@ OBJS += \
 ./src/main.o \
 ./src/ricochet_robot.o \
 ./src/test.o \
-./src/visualiser.o 
+./src/visualisation.o 
 
 C_DEPS += \
 ./src/SDLS.d \
@@ -28,7 +28,7 @@ C_DEPS += \
 ./src/main.d \
 ./src/ricochet_robot.d \
 ./src/test.d \
-./src/visualiser.d 
+./src/visualisation.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

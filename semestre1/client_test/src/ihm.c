@@ -7,18 +7,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-
+#include <pthread.h>
 #include "../headers/ihm.h"
 #define MAP "assets/map.bmp"
 #define ACC "assets/accueil.png"
 
 static SDL_Texture *empty_Tx;
+extern pthread_t thread_com, thread_chat;
 extern plateau_t pl;
 extern enigme_t enigme;
 extern bilan_t bilan;
-extern int coupure;
+extern plateau_t initPl;
+extern enigme_t initEnigme;
+extern int typeTraitement;
 extern char msg_signal[128];
-bool_t quit = FALSE;
+extern int sc;
+extern bool_t moiJoue;
+extern char myName[256];
+extern int valideCoups;
+
+bool_t modeVisualisation;
+extern bool_t quit = FALSE;
 int currentPhase;
 Uint32 timeStart = 0;
 
@@ -28,8 +37,39 @@ TTF_Font *font;
 SDL_Color colorBlack = { 0, 0, 0, 0 };
 
 void gest_ihm(int signum, siginfo_t * info, void * vide) {
-	coupure = 0;
-	printf("gest SIG_IHM %d\n", signum);
+
+	printf("gest SIG_IHM %d ==> val : %d\n", signum, info->si_value.sival_int);
+	typeTraitement |= info->si_value.sival_int;
+	if ( SIGALEMENT & info->si_value.sival_int) {
+		displayMsg(msg_signal, FALSE);
+	}
+	if ( PHASE_REFLEX & info->si_value.sival_int) {
+		currentPhase = PHASE_REFLEX;
+		displayMsg("REFLEXION", TRUE);
+		timeStart = SDL_GetTicks();
+	}
+	if ( PHASE_ENCHERE & info->si_value.sival_int) {
+		currentPhase = PHASE_ENCHERE;
+		displayMsg("ENCHERE", TRUE);
+		timeStart = SDL_GetTicks();
+	}
+	if ( PHASE_RESO & info->si_value.sival_int) {
+		currentPhase = PHASE_RESO;
+		displayMsg("SOLUTION", TRUE);
+		timeStart = SDL_GetTicks();
+	}
+	if ( FIN_TOUR & info->si_value.sival_int) {
+		awaitLoadingTexte("ATTENTE TOUR", PHASE_REFLEX);
+		onclickReset(pl, &enigme, NULL, NULL, NULL, NULL);
+		display_bilan(&bilan);
+	}
+	if ( FIN_SESSION & info->si_value.sival_int) {
+		awaitLoadingTexte("attente de session ", PHASE_SESSION);
+	}
+	if ( UPDATE_L & info->si_value.sival_int) {
+		display_bilan(&bilan);
+	}
+
 }
 
 int estEntier(char *s) {
@@ -39,21 +79,24 @@ int estEntier(char *s) {
 	return -1;
 }
 
-void onclickReset(enigme_t oldEni, plateau_t oldPl, char* coups, char* moves,
+void onclickReset(plateau_t srcPl, enigme_t *srcE, char* coups, char* moves,
 		SDL_Rect *rectSrc, SDL_Rect *rectDst) {
 
 	SDL_Texture *tmp_Tx;
 
-	enigme = oldEni;
-	cpyPlateau(oldPl, pl);
-	memset(moves, 0, (int) sizeof(moves));
-	memset(coups, 0, (int) sizeof(moves));
-	sprintf(coups, "%d", 0);
+	cpyEnigme(srcE, &enigme);
+	cpyPlateau(srcPl, pl);
+	if (coups != NULL) {
+		memset(moves, 0, (int) sizeof(moves));
+		memset(coups, 0, (int) sizeof(moves));
+
+		sprintf(coups, "%d", 0);
+		tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
+		displayCoup(tmp_Tx, *rectSrc, rectDst);
+	}
 
 	display_plateau(pl);
 	display_enigme(&enigme);
-	tmp_Tx = txt2Texture(ren, font, &colorBlack, moves);
-	displayCoup(tmp_Tx, *rectSrc, rectDst);
 	SDL_RenderPresent(ren);
 }
 
@@ -72,9 +115,10 @@ int awaitLoading() {
 	SDL_Rect src_loading = { 0, 0, 64, 64 };
 
 	int i = 0, j;
-	coupure = 1;
 	j = 0;
-	while (coupure && !quit) {
+	printf("attente T:%d & %d = %d \n", typeTraitement, FIN_CONNEXION,
+			(typeTraitement & FIN_CONNEXION));
+	while (!(typeTraitement & FIN_CONNEXION) && !quit) {
 
 		SDL_PollEvent(&event);
 		if (event.type == SDL_QUIT) {
@@ -94,26 +138,44 @@ int awaitLoading() {
 		j = (1 + j) % 5;
 
 	}
+	typeTraitement &= ~FIN_CONNEXION;
 	return quit;
 }
-void displayMsg(char* msg) {
-	SDL_Rect rectSrc = { 0, 32, 96, 32 };
-	SDL_Rect rectDst = { 0, 576, 224, 32 };
+void erreur(char *msg) {
+	SDL_ShowSimpleMessageBox(0, "ERREUR", msg, win);
+	quit = TRUE;
+}
+void displayMsg(char* msg, bool_t phase) {
 	SDL_Color color = { 255, 0, 0, 0 };
 	SDL_Texture *msg_Tx;
-	SDL_Texture *emptyInput_Tx = IMG_LoadTexture(ren, "assets/inputField.png");
-	TTF_Font *font = TTF_OpenFont("assets/dayrom.TTF", 20);
+	SDL_Texture *emptyInput_Tx;
+	TTF_Font *font;
+	SDL_Rect rectSrc = { 0, 0, 96, 32 };
+	SDL_Rect rectDst = { 0, 576, 224, 32 };
+	if (phase) {
+		rectSrc.w = 4 * CASE;
+		rectDst.x = 7 * CASE;
+		rectDst.y = 16 * CASE;
+		rectDst.w = 4 * CASE;
+		emptyInput_Tx = IMG_LoadTexture(ren, "assets/phaseEmpty.png");
+	} else {
+		emptyInput_Tx = IMG_LoadTexture(ren, "assets/inputField.png");
+	}
+	if (phase)
+		font = TTF_OpenFont("assets/dayrom.TTF", 20);
+	else
+		font = TTF_OpenFont("assets/dayrom.TTF", 16);
 	msg_Tx = txt2Texture(ren, font, &color, msg);
 	SDL_RenderCopy(ren, emptyInput_Tx, &rectSrc, &rectDst);
-	rectDst.w -= 64;
-	SDL_QueryTexture(msg_Tx, NULL, NULL, &rectDst.w,
-						&rectDst.h);
+	if (!phase)
+		rectDst.w -= 64;
+	SDL_QueryTexture(msg_Tx, NULL, NULL, &rectDst.w, &rectDst.h);
 	SDL_RenderCopy(ren, msg_Tx, NULL, &rectDst);
 	SDL_RenderPresent(ren);
 	TTF_CloseFont(font);
 }
 
-int awaitLoadingTexte(char* msg) {
+int awaitLoadingTexte(char* msg, int attente) {
 	SDL_Event event;
 	SDL_Rect rectSrc = { 0, 32, 96, 32 };
 	SDL_Rect rectDst = { 0, 576, 224, 32 };
@@ -133,8 +195,7 @@ int awaitLoadingTexte(char* msg) {
 	int i = 0;
 	int j = 0;
 	char *ps;
-	coupure = 1;
-	while (coupure && !quit) {
+	while (!(typeTraitement & attente) && !quit) {
 		if (j == 0) {
 			ps = i == 0 ? "." : i == 1 ? "..." : "....";
 			msg_Tx = txt2Texture(ren, font, &color, ps);
@@ -154,6 +215,7 @@ int awaitLoadingTexte(char* msg) {
 	SDL_RenderCopy(ren, emptyInput_Tx, &rectSrc, &rectDst);
 	SDL_RenderPresent(ren);
 	TTF_CloseFont(font);
+	typeTraitement &= ~attente;
 	return quit;
 }
 bool_t estContenu(SDL_Rect *rect, SDL_MouseMotionEvent* p) {
@@ -255,9 +317,9 @@ void display_bilan(bilan_t *b) {
 	l = &(b->list_users);
 	cur = l->first;
 	max = l->nb < 15 ? l->nb : 15;
-	printf(" nb_client %d \n", l->nb);
-	char tmp[5];
 
+	char tmp[5];
+	SDLS_affiche_image("assets/emptyListUser.png", ren, rectNom.x, rectNom.y);
 	for (i = 0; i < max && cur != NULL; i++) {
 		nom_Tx = txt2Texture(ren, font, &color, cur->name);
 		memset(tmp, 0, 5);
@@ -302,8 +364,7 @@ void displayAccueil() {
 	SDL_Rect rectEmptyField = { 8 * CASE, 8 * CASE, 9 * CASE, 64 };
 	SDL_Rect rectSend = { 17 * CASE, 8 * CASE, 64, 64 };
 
-	char name[256];
-	memset(name, 0, 256);
+	memset(myName, 0, 256);
 	int len = 0;
 	bool_t shift, updateInput;
 
@@ -317,12 +378,12 @@ void displayAccueil() {
 			switch (event.key.keysym.sym) {
 			case SDLK_DELETE:
 				len = (len == 0) ? len : len - 1;
-				name[len] = 0;
+				myName[len] = 0;
 				updateInput = TRUE;
 				break;
 			case SDLK_BACKSPACE:
 				len = (len == 0) ? len : len - 1;
-				name[len] = 0;
+				myName[len] = 0;
 				updateInput = TRUE;
 				break;
 			case SDLK_KP_ENTER:
@@ -334,7 +395,7 @@ void displayAccueil() {
 			default:
 				if (event.key.keysym.sym >= 'a'
 						&& event.key.keysym.sym <= 'z') {
-					name[len++] = event.key.keysym.sym
+					myName[len++] = event.key.keysym.sym
 							- ((shift == TRUE) ? 32 : 0);
 					updateInput = TRUE;
 				}
@@ -353,10 +414,9 @@ void displayAccueil() {
 		case SDL_MOUSEBUTTONDOWN:
 			if (estContenu(&rectSend, &event.motion)) {
 				if (len <= 0) {
-					SDL_ShowSimpleMessageBox(0, "ERROR", "nom vide", win);
+					displayMsg("nom vide", FALSE);
 				} else {
-//					TODO send REquete
-					//send_request(sc,2,CONNEXION,name);
+					send_request(sc, 2, CONNEXION, myName);
 					awaitLoading();
 					quitAccueil = TRUE;
 				}
@@ -372,8 +432,8 @@ void displayAccueil() {
 		}
 		if (updateInput) {
 			updateInput = FALSE;
-			printf("name %s\n", name);
-			inputField_Tx = txt2Texture(ren, font, &color, name);
+			printf("myName %s\n", myName);
+			inputField_Tx = txt2Texture(ren, font, &color, myName);
 			SDL_QueryTexture(inputField_Tx, NULL, NULL, &rectInputField.w,
 					&rectInputField.h);
 			SDL_RenderCopy(ren, emptyInput_Tx, NULL, &rectEmptyField);
@@ -418,13 +478,11 @@ int ihm1() {
 	SDL_Rect rectArret = { 16 * CASE, 17 * CASE, 64, 64 };
 	SDL_Rect rectSuivant = { 22 * CASE, 17 * CASE, 64, 64 };
 
-	plateau_t oldPl;
-	enigme_t oldEni;
-	Direction dr;
-	int selected;
-	bool_t focusCoup = FALSE;
-	bool_t focusUser = FALSE;
-	int userSelected = -1;
+	Direction direction;
+	int robotSelected;
+	bool_t focusCoup, preFocusCoup;
+	bool_t focusUser, preFocusUser;
+	int userSelected;
 
 	char message[256];
 	char moves[512];
@@ -443,44 +501,53 @@ int ihm1() {
 		TTF_GetError());
 	}
 
+	empty_Tx = IMG_LoadTexture(ren, "assets/inputField.png");
+	font = TTF_OpenFont("assets/dayrom.TTF", 12);
+
+	/*** Show **/
+
+	displayAccueil(win, ren);
+	SDLS_affiche_image("assets/pl.png", ren, 0, 0);
+//	init_plateau(pl); // TODO Sup
+//	parse_plateau("(3,4,H)(3,4,G)(12,6,H)(1,4,H)(9,4,G)(15,6,H)(15,6,T)", pl); // TODO sup
+	if (awaitLoadingTexte("attente de session ", PHASE_SESSION)) {
+		goto fin;
+	}
+
+	focusCoup = preFocusCoup = FALSE;
+	focusUser = preFocusUser = FALSE;
+	userSelected = robotSelected = -1;
+	direction = NONE;
 	memset(message, 0, sizeof(message));
 	memset(moves, 0, sizeof(moves));
 	memset(move, 0, sizeof(move));
 	memset(coups, 0, sizeof(coups));
-	empty_Tx = IMG_LoadTexture(ren, "assets/inputField.png");
-	font = TTF_OpenFont("assets/dayrom.TTF", 12);
-
-	displayAccueil(win, ren);
-
 	SDLS_affiche_image("assets/pl.png", ren, 0, 0);
-	init_plateau(pl); // TODO Sup
-	parse_plateau("(3,4,H)(3,4,G)(12,6,H)(1,4,H)(9,4,G)(15,6,H)(15,6,T)", pl); // TODO sup
-	if (awaitLoadingTexte("attente de session ")) {
-		goto fin;
-	}
 	display_plateau(pl);
 
-	if (awaitLoadingTexte("attente d'enigme ")) {
+	if (awaitLoadingTexte("attente d'enigme ", PHASE_REFLEX)) {
 		goto fin;
 	}
-	parse_enigme("13r,5r,2b,2b,12j,2j,3v,13v,4c,4c,R)", &enigme); //TODO SUP
-	parse_bilan("6(saucisse,223)(brouette,0)(zak,1234)(ashraf,512)", &bilan); //TODO SUP
+//	parse_enigme("13r,5r,2b,2b,12j,2j,3v,13v,4c,4c,R)", &enigme); //TODO SUP
+//	parse_bilan("6(saucisse,223)(brouette,0)(zak,1234)(ashraf,512)", &bilan); //TODO SUP
+//	user_t *usr = getuser("ashraf", &bilan.list_users); //TODO SUP
+//	usr->solution = strdup("VBRGBHJD"); //TODO SUP
+//	usr = getuser("saucisse", &bilan.list_users); //TODO SUP
+//	usr->solution = strdup("VBRGBHJDR"); //TODO SUP
+
 	bind_enigme_plateau(pl, &enigme);
 	display_enigme(&enigme);
 	display_bilan(&bilan);
 
-	displayMsg("PHASE REFLEXION"); //TODO
-	SDL_Delay(1000);
-	displayMsg("PHASE ENCHERE");
-	SDL_Delay(1000);
-	displayMsg("PHASE SOLUTION");
-	SDL_Delay(1000);
-	//TODO
-	oldEni = enigme;
-	cpyPlateau(pl, oldPl);
-	selected = -1;
-	dr = NONE;
+//	displayMsg("PHASE REFLEXION");TODO SUP
+//	SDL_Delay(1000);
+//	displayMsg("PHASE ENCHERE");
+//	SDL_Delay(1000);
+//	displayMsg("PHASE SOLUTION");
+//	SDL_Delay(1000);
+//	//TODO SUP
 
+// display labelCoup
 	tmp_Tx = txt2Texture(ren, font, &colorBlack, labelCoup);
 	SDL_QueryTexture(tmp_Tx, NULL, NULL, &rectLabelCoup.w, &rectLabelCoup.h);
 	SDL_RenderCopy(ren, tmp_Tx, NULL, &rectLabelCoup);
@@ -490,59 +557,85 @@ int ihm1() {
 
 	SDL_StartTextInput();
 	int k, save_yUser;
-	timeStart = SDL_GetTicks();
-	currentPhase = PHASE_ENCHERE; //TODO SUP
+
 	while (!quit) {
 		SDL_WaitEvent(&event);
-
 		switch (event.type) {
 		case SDL_MOUSEBUTTONDOWN:
 //			handle send moves or coups numbers of moves
 			if (estContenu(&rectSendMoves, &event.motion)) {
-				SDL_ShowSimpleMessageBox(0, "SENDMOVES", moves, win);
-//				SEND REQUETE TODO
+				if (currentPhase == PHASE_REFLEX && strlen(coups) > 0) {
+					send_request(sc, 3, SOLUTION, myName, coups);
+				} else if (currentPhase == PHASE_ENCHERE && strlen(coups) > 0) {
+					valideCoups =
+							(valideCoups == -1) ? atoi(coups) : valideCoups;
+					send_request(sc, 3, ENCHERE, myName, coups);
+				} else if (currentPhase == PHASE_RESO && strlen(moves) > 0
+						&& moiJoue) {
+					send_request(sc, 3, SOLUTION, myName, moves);
+				} else {
+					if (!moiJoue && currentPhase == PHASE_RESO) {
+						displayMsg("Ce n'est pas votre tour", FALSE);
+					} else {
+						displayMsg("coup ou deplacement est vide ", FALSE);
+					}
+				}
 			}
 //			handle btn reset
 			if (estContenu(&rectReset, &event.motion)
 					|| estContenu(&rectCoup, &event.motion)) {
-				SDL_ShowSimpleMessageBox(0, "DEBUG", "RESET", win);
-				if (strlen(moves) > 0) {
-					onclickReset(oldEni, oldPl, coups, moves, &rectCoup,
+				if (strlen(moves) > 0 || strlen(coups) > 0) {
+					onclickReset(initPl, &initEnigme, coups, moves, &rectCoup,
 							&rectEmpty);
 				}
 			}
 //			handle btn arret simulation
 			if (estContenu(&rectArret, &event.motion)) {
-				SDL_ShowSimpleMessageBox(0, "DEBUG", "ARRET", win);
+				if (modeVisualisation) {
+					arreterVisualisation();
+					displayMsg("arret de visualisation", FALSE);
+				}
 			}
 //			handle btn voir simulation
 			if (estContenu(&rectVoir, &event.motion)) {
-				SDL_ShowSimpleMessageBox(0, "DEBUG", "Voir", win);
+				if (userSelected >= 0) {
+					displayMsg("visalisation", FALSE);
+					demarrerVisualisation(userSelected);
+				}
 			}
 //			handle btn suivant (movement suivant de la simulation
 			if (estContenu(&rectSuivant, &event.motion)) {
-				SDL_ShowSimpleMessageBox(0, "DEBUG", "Suivant", win);
+				if (modeVisualisation) {
+					pasVisualisation();
+					displayMsg("pas suivant", FALSE);
+				}
 			}
 
 //			handle focus coups
 			focusCoup = FALSE;
 			if (estContenu(&rectCoup, &event.motion)) {
-				SDL_ShowSimpleMessageBox(0, "DEBUG", "COUPS", win);
 				SDLS_affiche_image("assets/focusCoups.png", ren, rectCoup.x,
 						rectCoup.y + CASE);
 				memset(coups, 0, sizeof(coups));
 				lenCoups = 0;
-				focusCoup = TRUE;
+				preFocusCoup = focusCoup = TRUE;
+
 			}
 //			handle select user
 			save_yUser = rectUser.y;
 			focusUser = FALSE;
 			for (k = 0; k < bilan.list_users.nb; k++) {
 				if (estContenu(&rectUser, &event.motion)) {
-					SDL_ShowSimpleMessageBox(0, "DEBUG", "USER", win);
+					if (userSelected > -1) {
+						int y = rectUser.y;
+						rectUser.y = save_yUser + CASE * userSelected;
+						SDLS_affiche_image("assets/unfocusUser.png", ren,
+								rectUser.x, rectUser.y);
+						rectUser.y = y;
+					}
 					SDLS_affiche_image("assets/focusUser.png", ren, rectUser.x,
 							rectUser.y);
-					focusUser = TRUE;
+					preFocusUser = focusUser = TRUE;
 					userSelected = k;
 
 				}
@@ -551,56 +644,66 @@ int ihm1() {
 			rectUser.y = save_yUser;
 
 			//handle move robot
-			x = event.motion.x / CASE;
-			y = event.motion.y / CASE;
-			for (i = 0; i < NB_ROBOT; ++i) {
-				if (enigme.robots[i].x == x && enigme.robots[i].y == y)
-					selected = i;
-			}
-			if (selected > -1) {
-				dr = estDirection(&enigme, &event.motion, selected, -1, 0)
-						== TRUE ? Gauche : dr;
-				dr = estDirection(&enigme, &event.motion, selected, 1, 0)
-						== TRUE ? Droit : dr;
-				dr = estDirection(&enigme, &event.motion, selected, 0, -1)
-						== TRUE ? Haut : dr;
-				dr = estDirection(&enigme, &event.motion, selected, 0, 1)
-						== TRUE ? Bas : dr;
-			}
+			if (!modeVisualisation) {
+				x = event.motion.x / CASE;
+				y = event.motion.y / CASE;
+				for (i = 0; i < NB_ROBOT; ++i) {
+					if (enigme.robots[i].x == x && enigme.robots[i].y == y)
+						robotSelected = i;
+				}
+				if (robotSelected > -1) {
+					direction =
+							estDirection(&enigme, &event.motion, robotSelected,
+									-1, 0) == TRUE ? Gauche : direction;
+					direction =
+							estDirection(&enigme, &event.motion, robotSelected,
+									1, 0) == TRUE ? Droit : direction;
+					direction =
+							estDirection(&enigme, &event.motion, robotSelected,
+									0, -1) == TRUE ? Haut : direction;
+					direction =
+							estDirection(&enigme, &event.motion, robotSelected,
+									0, 1) == TRUE ? Bas : direction;
+				}
 
-			if (dr != NONE) {
-				update_pos_robot(pl, &enigme.robots[selected], dr);
-				/* ajout de deplacement robot */
-				move[0] = enigme.robots[selected].c;
-				move[1] = dr;
-				strcat(moves, move);
-				sprintf(coups, "%d", ((int) (strlen(moves) / 2)));
+				if (direction != NONE) {
+					update_pos_robot(pl, &enigme.robots[robotSelected],
+							direction);
+					/* update dans moves le nouveau deplacement de robot et le coups*/
+					move[0] = enigme.robots[robotSelected].c;
+					move[1] = direction;
+					strcat(moves, move);
+					sprintf(coups, "%d", ((int) (strlen(moves) / 2)));
 
-				//update view  TODO a ameliorer
-				display_plateau(pl);
-				display_enigme(&enigme);
-				tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
-				displayCoup(tmp_Tx, rectCoup, &rectEmpty);
+					//update view  TODO a ameliorer
+					display_plateau(pl);
+					display_enigme(&enigme);
+					tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
+					displayCoup(tmp_Tx, rectCoup, &rectEmpty);
 
-				SDL_RenderPresent(ren);
+					SDL_RenderPresent(ren);
 
-				selected = -1;
-				dr = NONE;
+					robotSelected = -1;
+					direction = NONE;
+				}
+
+				// handle unfocus
+				if (preFocusCoup && !focusCoup) {
+					printf("focuCoups NON\n");
+					SDLS_affiche_image("assets/unfocusCoups.png", ren,
+							rectCoup.x, rectCoup.y + CASE);
+					preFocusCoup = focusCoup;
+				}
+				if (preFocusUser && !focusUser) {
+					printf("focuUser NON\n");
+					rectUser.y = save_yUser + CASE * userSelected;
+					SDLS_affiche_image("assets/unfocusUser.png", ren,
+							rectUser.x, rectUser.y);
+					rectUser.y = save_yUser;
+					userSelected = -1;
+					preFocusUser = focusUser;
+				}
 			}
-			// handle unfocus
-			if (!focusCoup) {
-				printf("focuCoups NON\n");
-				SDLS_affiche_image("assets/unfocusCoups.png", ren, rectCoup.x,
-						rectCoup.y + CASE);
-			}
-			if (!focusUser) {
-				printf("focuUser NON\n");
-				rectUser.y = rectUser.y + CASE * userSelected;
-				SDLS_affiche_image("assets/unfocusUser.png", ren, rectUser.x,
-						rectUser.y);
-				rectUser.y = save_yUser;
-			}
-
 			break;
 			// handle entrer en dur le nb coups
 		case SDL_TEXTINPUT:
@@ -637,6 +740,9 @@ int ihm1() {
 	fin: TTF_CloseFont(font);
 	SDL_DestroyRenderer(ren);
 	SDL_DestroyWindow(win);
+	send_request(sc, 2, SORT, myName);
+	pthread_cancel(thread_com);
+	pthread_cancel(thread_chat);
 	SDL_Quit();
 	return 0;
 }
