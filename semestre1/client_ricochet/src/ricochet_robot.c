@@ -216,11 +216,8 @@ void parse_bilan(char* data, bilan_t* bil) {
 			cnom = 0;
 			sscanf(data + offset, ",%d", &score);
 
-			if (getuser(buffer, &bil->list_users) != NULL) {
-				printf("mod %s %d\n", buffer, score);
-			} else {
+			if (getuser(buffer, &bil->list_users) == NULL) {
 				adduser(buffer, score, &(bil->list_users));
-				printf("cre %s %d\n", buffer, score);
 			}
 
 			memset(buffer, 0, NAME_SIZE);

@@ -139,9 +139,10 @@ int awaitLoading() {
 	typeTraitement &= ~FIN_CONNEXION;
 	return quit;
 }
-void erreur(char *msg) {
+void erreur(char *msg, bool_t fin) {
 	SDL_ShowSimpleMessageBox(0, "ERREUR", msg, win);
-	quit = TRUE;
+	if (fin)
+		quit = TRUE;
 }
 void displayMsg(char* msg, bool_t phase) {
 	SDL_Color color = { 255, 0, 0, 0 };

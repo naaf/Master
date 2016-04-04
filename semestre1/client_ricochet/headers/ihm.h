@@ -39,15 +39,15 @@ bool_t estContenu(SDL_Rect *rect, SDL_MouseMotionEvent* p);
 void update_pos_robot(plateau_t p, robot_t *r, Direction d);
 
 int awaitLoading();
-int awaitLoadingTexte(char* msg, int attente) ;
+int awaitLoadingTexte(char* msg, int attente);
 void ihm();
 void display_plateau(plateau_t pl);
 void display_enigme(enigme_t *e);
 void display_bilan(bilan_t *b);
 void displayAccueil();
 void displayCoup(SDL_Texture *tmp_Tx, SDL_Rect srcR, SDL_Rect *emptyR);
-void displayMsg(char* msg, bool_t phase) ;
-void erreur(char *msg);
+void displayMsg(char* msg, bool_t phase);
+void erreur(char *msg, bool_t fin);
 
 void onclickReset(plateau_t srcPl, enigme_t *srcE, char* coups, char* moves,
 		SDL_Rect *rectSrc, SDL_Rect *rectDst);

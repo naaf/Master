@@ -22,31 +22,6 @@ Uint32 SDLS_couleur(int r, int g, int b) {
 	return (((r << 8) + g) << 8) + b;
 }
 
-int SDLS_getpixels(SDL_Renderer * ren, Uint32* pixels, int w, int h) {
-	int res;
-	int width = w; //, height=h;
-	//SDL_RenderGetLogicalSize(ren,&width,&height);
-	//printf("%d %d\n",width,height);
-	res = SDL_RenderReadPixels(ren, NULL, SDL_PIXELFORMAT_ARGB8888, pixels,
-			width * sizeof(Uint32));
-	if (res < 0) {
-		fprintf(stderr, "Erreur getpixels : %s\n", SDL_GetError());
-		return -1;
-	}
-	return 0;
-}
-int SDLS_putpixels(SDL_Renderer * ren, Uint32* pixels, int w, int h) {
-	SDL_Texture * tex;
-	int width = w, height = h;
-	//SDL_RenderGetLogicalSize(ren,&width,&height);
-	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888,
-			SDL_TEXTUREACCESS_STREAMING, width, height);
-	SDL_UpdateTexture(tex, NULL, pixels, width * sizeof(Uint32));
-	SDL_RenderCopy(ren, tex, NULL, NULL);
-	SDL_RenderPresent(ren);
-	SDL_DestroyTexture(tex);
-	return 0;
-}
 
 void SDLS_affiche_image(char * fname, SDL_Renderer * ren, int x, int y) {
 	SDL_Texture * tex = 0;

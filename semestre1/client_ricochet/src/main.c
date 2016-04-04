@@ -31,7 +31,7 @@ bool_t moiJoue;
 char myName[256];
 int valideCoups;
 int etat;
-bool_t quit ;
+bool_t quit;
 
 plateau_t pl;
 enigme_t enigme;
@@ -48,7 +48,7 @@ void traitement(char **tab) {
 	union sigval valeur;
 
 	if (tab == NULL) {
-		fprintf(stderr,"ERROR traitement commande NULL inconnu \n");
+		fprintf(stderr, "ERROR traitement commande NULL inconnu \n");
 		return;
 	}
 
@@ -63,6 +63,9 @@ void traitement(char **tab) {
 	} else if (!strcmp(DECONNEXION, tab[0])) {
 		removeuser(tab[1], &bilan.list_users);
 		valeur.sival_int = UPDATE_L;
+		if (bilan.list_users.nb < 2) {
+			erreur("Fin de jeu moins de 2 joueurs", TRUE);
+		}
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(SESSION, tab[0])) {
 		if (etat & FIN_CONNEXION) {
@@ -74,8 +77,7 @@ void traitement(char **tab) {
 			valeur.sival_int = PHASE_SESSION;
 			sigqueue(pid_main, SIG_IHM, valeur);
 		} else {
-			erreur("ERREUR Protocol envois SESSION sans CONNEXION");
-//			quit = TRUE;
+			erreur("ERREUR Protocol envois SESSION sans CONNEXION", FALSE);
 		}
 	} else if (!strcmp(VAINQUEUR, tab[0])) {
 		etat &= ~PHASE_SESSION;
@@ -91,8 +93,7 @@ void traitement(char **tab) {
 			valeur.sival_int = PHASE_REFLEX;
 			sigqueue(pid_main, SIG_IHM, valeur);
 		} else {
-			erreur("ERREUR Protocol envois TOUR sans SESSION");
-//			quit = TRUE;
+			erreur("ERREUR Protocol envois TOUR sans SESSION", FALSE);
 		}
 
 	} else if (!strcmp(TUASTROUVE, tab[0])) {
@@ -184,7 +185,7 @@ void traitement(char **tab) {
 	} else if (!strcmp(CHAT, tab[0])) {
 		printf("%s : %s", tab[1], tab[2]);
 	} else {
-		fprintf(stderr,"ERROR de protocol %s inconnu \n", tab[0]);
+		fprintf(stderr, "ERROR de protocol %s inconnu \n", tab[0]);
 	}
 }
 
@@ -224,7 +225,7 @@ void *run_com(void *arg) {
 
 	memset(response, 0, 1024);
 
-	fprintf(stderr,"thread com demarre :\n");
+	fprintf(stderr, "thread com demarre :\n");
 
 	/*--------------Blocquer les signaux------------------*/
 	sigset_t mask;
@@ -239,7 +240,7 @@ void *run_com(void *arg) {
 
 		if (0 == strlen(response)) {
 			fprintf(stderr, "ERROR : Connection Socket");
-			erreur("ERROR : Connection Socket");
+			erreur("ERROR : Connection Socket", TRUE);
 			break;
 		}
 
@@ -307,7 +308,7 @@ int main(int argc, char** argv) {
 	if (bilan.list_users.nb != 0) {
 		free_list_user(&bilan.list_users);
 	}
-	fprintf(stderr,"Fin main\n");
+	fprintf(stderr, "Fin main\n");
 
 	return EXIT_SUCCESS;
 }
