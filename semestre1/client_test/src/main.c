@@ -48,7 +48,7 @@ void traitement(char **tab) {
 	union sigval valeur;
 
 	if (tab == NULL) {
-		printf("ERROR traitement commande NULL inconnu \n");
+		fprintf(stderr,"ERROR traitement commande NULL inconnu \n");
 		return;
 	}
 
@@ -184,7 +184,7 @@ void traitement(char **tab) {
 	} else if (!strcmp(CHAT, tab[0])) {
 		printf("%s : %s", tab[1], tab[2]);
 	} else {
-		printf("ERROR de protocol %s inconnu \n", tab[0]);
+		fprintf(stderr,"ERROR de protocol %s inconnu \n", tab[0]);
 	}
 }
 
@@ -210,7 +210,7 @@ void *run_chat(void *arg) {
 		printf("entrez votre msg : ");
 		fflush(stdout);
 		fgets(entree, sizeof(entree), stdin);
-		printf("envois : %s", entree);
+//		printf("envois : %s", entree);
 		send_request(sc, 2, CHAT, entree);
 		memset(entree, 0, strlen(entree) + 2);
 	}
@@ -224,7 +224,7 @@ void *run_com(void *arg) {
 
 	memset(response, 0, 1024);
 
-	printf("thread com demarre :\n");
+	fprintf(stderr,"thread com demarre :\n");
 
 	/*--------------Blocquer les signaux------------------*/
 	sigset_t mask;
@@ -235,7 +235,7 @@ void *run_com(void *arg) {
 
 	while (TRUE) {
 		read_response(sc, response);
-		printf("com: recu reponse len %zu : %s\n", strlen(response), response);
+//		printf("com: recu reponse len %zu : %s\n", strlen(response), response);
 
 		if (0 == strlen(response)) {
 			fprintf(stderr, "ERROR : Connection Socket");
@@ -258,7 +258,7 @@ void *run_com(void *arg) {
 int main(int argc, char** argv) {
 
 	pid_main = getpid();
-	printf("pid Main %d SIG_IHM %d\n", pid_main, SIG_IHM);
+//	printf("pid Main %d SIG_IHM %d\n", pid_main, SIG_IHM);
 
 	sigset_t mask;
 	struct sigaction action;
@@ -307,7 +307,7 @@ int main(int argc, char** argv) {
 	if (bilan.list_users.nb != 0) {
 		free_list_user(&bilan.list_users);
 	}
-	printf("Fin main\n");
+	fprintf(stderr,"Fin main\n");
 
 	return EXIT_SUCCESS;
 }

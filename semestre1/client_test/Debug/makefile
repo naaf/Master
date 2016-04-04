@@ -23,19 +23,19 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: client_test
+all: client_ricochet
 
 # Tool invocations
-client_test: $(OBJS) $(USER_OBJS)
+client_ricochet: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Cross GCC Linker'
-	gcc  -o "client_test" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc  -o "client_ricochet" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(EXECUTABLES)$(OBJS)$(C_DEPS) client_test
+	-$(RM) $(EXECUTABLES)$(OBJS)$(C_DEPS) client_ricochet
 	-@echo ' '
 
 .PHONY: all clean dependents

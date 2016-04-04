@@ -38,7 +38,6 @@ SDL_Color colorBlack = { 0, 0, 0, 0 };
 
 void gest_ihm(int signum, siginfo_t * info, void * vide) {
 
-	printf("gest SIG_IHM %d ==> val : %d\n", signum, info->si_value.sival_int);
 	typeTraitement |= info->si_value.sival_int;
 	if ( SIGALEMENT & info->si_value.sival_int) {
 		displayMsg(msg_signal, FALSE);
@@ -116,8 +115,7 @@ int awaitLoading() {
 
 	int i = 0, j;
 	j = 0;
-	printf("attente T:%d & %d = %d \n", typeTraitement, FIN_CONNEXION,
-			(typeTraitement & FIN_CONNEXION));
+
 	while (!(typeTraitement & FIN_CONNEXION) && !quit) {
 
 		SDL_PollEvent(&event);
@@ -343,7 +341,6 @@ void display_bilan(bilan_t *b) {
 	tour_Tx = txt2Texture(ren, font, &colorBlack, tmp);
 	SDL_QueryTexture(tour_Tx, NULL, NULL, &rectTour.w, &rectTour.h);
 	SDL_RenderCopy(ren, tour_Tx, &rectEmpty, &rectTour);
-	printf(" i %d max %d\n", i, max);
 	SDL_RenderPresent(ren);
 	TTF_CloseFont(font);
 }
@@ -432,7 +429,6 @@ void displayAccueil() {
 		}
 		if (updateInput) {
 			updateInput = FALSE;
-			printf("myName %s\n", myName);
 			inputField_Tx = txt2Texture(ren, font, &color, myName);
 			SDL_QueryTexture(inputField_Tx, NULL, NULL, &rectInputField.w,
 					&rectInputField.h);
@@ -690,13 +686,11 @@ int ihm1() {
 
 				// handle unfocus
 				if (preFocusCoup && !focusCoup) {
-					printf("focuCoups NON\n");
 					SDLS_affiche_image("assets/unfocusCoups.png", ren,
 							rectCoup.x, rectCoup.y + CASE);
 					preFocusCoup = focusCoup;
 				}
 				if (preFocusUser && !focusUser) {
-					printf("focuUser NON\n");
 					rectUser.y = save_yUser + CASE * userSelected;
 					SDLS_affiche_image("assets/unfocusUser.png", ren,
 							rectUser.x, rectUser.y);
@@ -718,7 +712,6 @@ int ihm1() {
 						tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
 						displayCoup(tmp_Tx, rectCoup, &rectEmpty);
 						SDL_RenderPresent(ren);
-						printf("entier ok %s\n", coups);
 					}
 				}
 			}
