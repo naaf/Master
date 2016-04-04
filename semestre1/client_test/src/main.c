@@ -239,6 +239,7 @@ void *run_com(void *arg) {
 
 		if (0 == strlen(response)) {
 			fprintf(stderr, "ERROR : Connection Socket");
+			erreur("ERROR : Connection Socket");
 			break;
 		}
 

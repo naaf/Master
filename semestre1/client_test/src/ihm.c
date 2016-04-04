@@ -27,7 +27,7 @@ extern char myName[256];
 extern int valideCoups;
 
 bool_t modeVisualisation;
-extern bool_t quit = FALSE;
+extern bool_t quit;
 int currentPhase;
 Uint32 timeStart = 0;
 
@@ -518,6 +518,7 @@ int ihm1() {
 	focusUser = preFocusUser = FALSE;
 	userSelected = robotSelected = -1;
 	direction = NONE;
+	lenCoups = 0;
 	memset(message, 0, sizeof(message));
 	memset(moves, 0, sizeof(moves));
 	memset(move, 0, sizeof(move));

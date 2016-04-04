@@ -29,7 +29,7 @@ all: client_test
 client_test: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Cross GCC Linker'
-	gcc  -o "client_test" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L"/home/naaf/git/Master/semestre1/client_test/lib" -o "client_test" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
