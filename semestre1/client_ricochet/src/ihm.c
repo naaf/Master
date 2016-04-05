@@ -610,15 +610,15 @@ int ihm1() {
 			}
 
 //			handle focus coups
-			focusCoup = FALSE;
-			if (estContenu(&rectCoup, &event.motion)) {
-				SDLS_affiche_image("assets/focusCoups.png", ren, rectCoup.x,
-						rectCoup.y + CASE);
-				memset(coups, 0, sizeof(coups));
-				lenCoups = 0;
-				preFocusCoup = focusCoup = TRUE;
-
-			}
+//			focusCoup = FALSE;
+//			if (estContenu(&rectCoup, &event.motion)) {
+//				SDLS_affiche_image("assets/focusCoups.png", ren, rectCoup.x,
+//						rectCoup.y + CASE);
+//				memset(coups, 0, sizeof(coups));
+//				lenCoups = 0;
+//				preFocusCoup = focusCoup = TRUE;
+//
+//			}
 //			handle select user
 			save_yUser = rectUser.y;
 			focusUser = FALSE;
@@ -686,11 +686,11 @@ int ihm1() {
 				}
 
 				// handle unfocus
-				if (preFocusCoup && !focusCoup) {
-					SDLS_affiche_image("assets/unfocusCoups.png", ren,
-							rectCoup.x, rectCoup.y + CASE);
-					preFocusCoup = focusCoup;
-				}
+//				if (preFocusCoup && !focusCoup) {
+//					SDLS_affiche_image("assets/unfocusCoups.png", ren,
+//							rectCoup.x, rectCoup.y + CASE);
+//					preFocusCoup = focusCoup;
+//				}
 				if (preFocusUser && !focusUser) {
 					rectUser.y = save_yUser + CASE * userSelected;
 					SDLS_affiche_image("assets/unfocusUser.png", ren,
@@ -702,21 +702,21 @@ int ihm1() {
 			}
 			break;
 			// handle entrer en dur le nb coups
-		case SDL_TEXTINPUT:
-			if (focusCoup
-					&& ((currentPhase & PHASE_REFLEX)
-							|| (currentPhase & PHASE_ENCHERE))) {
-				int nb = estEntier(event.text.text);
-				if (0 <= nb && nb <= 9) {
-					if (lenCoups < 4) {
-						coups[lenCoups++] = event.text.text[0];
-						tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
-						displayCoup(tmp_Tx, rectCoup, &rectEmpty);
-						SDL_RenderPresent(ren);
-					}
-				}
-			}
-			break;
+//		case SDL_TEXTINPUT:
+//			if (focusCoup
+//					&& ((currentPhase & PHASE_REFLEX)
+//							|| (currentPhase & PHASE_ENCHERE))) {
+//				int nb = estEntier(event.text.text);
+//				if (0 <= nb && nb <= 9) {
+//					if (lenCoups < 4) {
+//						coups[lenCoups++] = event.text.text[0];
+//						tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
+//						displayCoup(tmp_Tx, rectCoup, &rectEmpty);
+//						SDL_RenderPresent(ren);
+//					}
+//				}
+//			}
+//			break;
 		case SDL_QUIT:
 			quit = TRUE;
 			break;

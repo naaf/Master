@@ -22,7 +22,7 @@
 
 #define SIG_COM (SIGRTMIN + 3)
 #define SIG_IHM (SIGRTMIN + 4)
-#define IP_ADDR "132.227.115.112"
+#define IP_ADDR "132.227.113.98"
 
 /********** variable globale ****************/
 pthread_t thread_com, thread_chat;
@@ -40,11 +40,11 @@ plateau_t initPl;
 enigme_t initEnigme;
 
 int typeTraitement;
-char msg_signal[128];
+char msg_signal[256];
 
 void gest_ihm(int signum, siginfo_t * info, void * vide);
 
-void traitement(char **tab) {
+void traitement(char **tab, int size) {
 	union sigval valeur;
 
 	if (tab == NULL) {
@@ -57,14 +57,26 @@ void traitement(char **tab) {
 		valeur.sival_int = FIN_CONNEXION;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(CONNECTE, tab[0])) {
+		if (size < 2) {
+			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
+			return;
+		}
 		adduser(tab[1], 0, &bilan.list_users);
 		valeur.sival_int = UPDATE_L;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(DECONNEXION, tab[0])) {
+		if (size < 2) {
+			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
+			return;
+		}
 		removeuser(tab[1], &bilan.list_users);
 		valeur.sival_int = UPDATE_L;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(SESSION, tab[0])) {
+		if (size < 2) {
+			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
+			return;
+		}
 		if (etat & FIN_CONNEXION) {
 			etat |= PHASE_SESSION;
 			fprintf(stderr, "%s\n", tab[1]);
@@ -77,11 +89,19 @@ void traitement(char **tab) {
 			erreur("ERREUR Protocol envois SESSION sans CONNEXION", FALSE);
 		}
 	} else if (!strcmp(VAINQUEUR, tab[0])) {
+		if (size < 2) {
+			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
+			return;
+		}
 		etat &= ~PHASE_SESSION;
 		parse_bilan(tab[1], &bilan);
 		valeur.sival_int = FIN_SESSION;
 		sigqueue(pid_main, SIG_IHM, valeur); //TODO
 	} else if (!strcmp(TOUR, tab[0])) {
+		if (size < 3) {
+			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
+			return;
+		}
 		if (etat & PHASE_SESSION) {
 			parse_enigme(tab[1], &enigme);
 			parse_bilan(tab[2], &bilan);
@@ -100,6 +120,10 @@ void traitement(char **tab) {
 		valeur.sival_int = PHASE_ENCHERE | SIGALEMENT;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(ILATROUVE, tab[0])) {
+		if (size < 3) {
+			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
+			return;
+		}
 		user_t *u = getuser(tab[1], &bilan.list_users);
 		if (u == NULL) {
 			fprintf(stderr, "user not exist %s \n", tab[1]);
@@ -112,11 +136,20 @@ void traitement(char **tab) {
 		valeur.sival_int = PHASE_ENCHERE | SIGALEMENT | UPDATE_L;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(FINREFLEXION, tab[0])) {
+
 		memset(msg_signal, 0, sizeof(msg_signal));
 		strcpy(msg_signal, "Fin reflexion timeout");
 		valeur.sival_int = PHASE_ENCHERE | SIGALEMENT;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(VALIDATION, tab[0])) {
+		if (size < 1) {
+			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
+			return;
+		}
+		if (size < 2) {
+			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
+			return;
+		}
 		user_t *u = getuser(myName, &bilan.list_users);
 		if (u == NULL) {
 			fprintf(stderr, "user not exist %s \n", tab[1]);
@@ -135,6 +168,10 @@ void traitement(char **tab) {
 		valeur.sival_int = SIGALEMENT;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(NOUVELLEENCHERE, tab[0])) {
+		if (size < 3) {
+			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
+			return;
+		}
 		memset(msg_signal, 0, sizeof(msg_signal));
 		sprintf(msg_signal, "New enchere %s %s", tab[1], tab[2]);
 		user_t *u = getuser(tab[1], &bilan.list_users);
@@ -148,6 +185,10 @@ void traitement(char **tab) {
 		sigqueue(pid_main, SIG_IHM, valeur);
 
 	} else if (!strcmp(FINENCHERE, tab[0])) {
+		if (size < 3) {
+			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
+			return;
+		}
 		if (!strcmp(myName, tab[1])) {
 			moiJoue = TRUE;
 		}
@@ -155,6 +196,10 @@ void traitement(char **tab) {
 		sigqueue(pid_main, SIG_IHM, valeur);
 
 	} else if (!strcmp(SASOLUTION, tab[0])) {
+		if (size < 3) {
+			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
+			return;
+		}
 		user_t *u = getuser(tab[1], &bilan.list_users);
 		if (u == NULL) {
 			fprintf(stderr, "user not exist %s \n", tab[1]);
@@ -173,6 +218,10 @@ void traitement(char **tab) {
 		sigqueue(pid_main, SIG_IHM, valeur);
 
 	} else if (!strcmp(MAUVAISE, tab[0])) {
+		if (size < 2) {
+			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
+			return;
+		}
 		memset(msg_signal, 0, sizeof(msg_signal));
 		if (!strcmp(myName, tab[1])) {
 			moiJoue = TRUE;
@@ -188,6 +237,10 @@ void traitement(char **tab) {
 		valeur.sival_int = FIN_TOUR;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(TROPLONG, tab[0])) {
+		if (size < 3) {
+			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
+			return;
+		}
 		memset(msg_signal, 0, sizeof(msg_signal));
 		if (!strcmp(myName, tab[1])) {
 			moiJoue = TRUE;
@@ -261,7 +314,7 @@ void *run_com(void *arg) {
 
 		tab = string_to_arraystring(response, &size, '/');
 
-		traitement(tab);
+		traitement(tab, size);
 
 		/*free resources*/
 		free_table(tab, size);
@@ -286,7 +339,7 @@ int main(int argc, char** argv) {
 	/*--------Initialisation et gestions des signaux--------*/
 
 	action.sa_sigaction = gest_ihm;
-	action.sa_flags = SA_SIGINFO | SA_RESTART;
+	action.sa_flags = SA_SIGINFO ;
 	sigfillset(&mask);
 	sigdelset(&mask, SIG_IHM);
 	sigdelset(&mask, SIGINT);
