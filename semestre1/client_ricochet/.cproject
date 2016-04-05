@@ -22,6 +22,9 @@
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.compiler.131275382" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler">
 								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.option.optimization.level.30370986" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" useByScannerDiscovery="false" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.debugging.level.418667183" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.max" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.include.paths.1190802847" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/users/nfs/Etu7/3100837/CP2R_Projet/include"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1411546328" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.826023166" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler">
@@ -35,6 +38,9 @@
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="SDL2"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="SDL2_image"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="SDL2_ttf"/>
+								</option>
+								<option id="gnu.c.link.option.paths.1983391631" superClass="gnu.c.link.option.paths" valueType="libPaths">
+									<listOptionValue builtIn="false" value="/users/Etu7/3100837/CP2R_Projet/lib"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.1991347933" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>

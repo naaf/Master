@@ -29,7 +29,7 @@ all: client_ricochet
 client_ricochet: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Cross GCC Linker'
-	gcc  -o "client_ricochet" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L/users/Etu7/3100837/CP2R_Projet/lib -o "client_ricochet" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

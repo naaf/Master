@@ -1,3 +1,0 @@
-export LD_LIBRARY_PATH="lib"
-OU
--Wl,-rpath,/path/to/foo -L/path/to/foo -lbaz

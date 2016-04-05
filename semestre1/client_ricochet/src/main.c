@@ -51,7 +51,7 @@ void traitement(char **tab) {
 		fprintf(stderr, "ERROR traitement commande NULL inconnu \n");
 		return;
 	}
-
+	fprintf(stderr, "traite %s \n", tab[0]);
 	if (!strcmp(BIENVENUE, tab[0])) {
 		etat |= FIN_CONNEXION;
 		valeur.sival_int = FIN_CONNEXION;
@@ -145,7 +145,11 @@ void traitement(char **tab) {
 
 	} else if (!strcmp(SASOLUTION, tab[0])) {
 		user_t *u = getuser(tab[1], &bilan.list_users);
-		if (u->solution == NULL) {
+		if (u == NULL) {
+			fprintf(stderr, "user not exist %s \n", tab[1]);
+			return;
+		}
+		if (u->solution != NULL) {
 			free(u->solution);
 		}
 		u->solution = strdup(tab[2]);
