@@ -63,9 +63,6 @@ void traitement(char **tab) {
 	} else if (!strcmp(DECONNEXION, tab[0])) {
 		removeuser(tab[1], &bilan.list_users);
 		valeur.sival_int = UPDATE_L;
-		if (bilan.list_users.nb < 2) {
-			erreur("Fin de jeu moins de 2 joueurs", TRUE);
-		}
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(SESSION, tab[0])) {
 		if (etat & FIN_CONNEXION) {
@@ -90,6 +87,7 @@ void traitement(char **tab) {
 			parse_bilan(tab[2], &bilan);
 			cpyEnigme(&enigme, &initEnigme);
 			cpyPlateau(initPl, pl);
+			bind_enigme_plateau(pl, &enigme);
 			valeur.sival_int = PHASE_REFLEX;
 			sigqueue(pid_main, SIG_IHM, valeur);
 		} else {

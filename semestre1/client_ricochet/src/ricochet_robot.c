@@ -177,7 +177,10 @@ void parse_bilan(char* data, bilan_t* bil) {
 
 	if (len < 11)
 		return;
-	free_list_user(&bil->list_users);
+	if (bil == NULL)
+		return;
+	if (bil->list_users.first != NULL)
+		free_list_user(&bil->list_users);
 	sscanf(data, "%d", &(bil->current_tour));
 	memset(buffer, 0, NAME_SIZE);
 	int cnom;

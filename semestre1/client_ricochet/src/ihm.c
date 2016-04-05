@@ -533,7 +533,7 @@ int ihm1() {
 //	usr = getuser("saucisse", &bilan.list_users); //TODO SUP
 //	usr->solution = strdup("VBRGBHJDR"); //TODO SUP
 
-	bind_enigme_plateau(pl, &enigme);
+
 	display_enigme(&enigme);
 	display_bilan(&bilan);
 

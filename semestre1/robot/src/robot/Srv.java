@@ -19,7 +19,7 @@ public class Srv {
 		pout = new PrintStream(sc.getOutputStream());
 		Scanner scane = new Scanner(System.in);
 		String com = "SESSION";
-		String corp = "(3,4,H)(3,4,G)(12,6,H)(1,4,H)(9,4,G)(15,6,H)";
+		String corp = "SESSION/(3,4,H)(3,4,G)(12,6,H)(1,4,H)(9,4,G)(15,6,H)/";
 		String r1 = com + '/' + corp + '/';
 		String r2 = "SASOLUTION" + '/' + "ASHRAF" + '/' + "RDRHVDVHVDRB" + '/';
 		String command;
