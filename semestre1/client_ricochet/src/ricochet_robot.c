@@ -137,58 +137,36 @@ void parse_plateau(char* data, plateau_t plateau) {
 }
 
 void parse_enigme(char* data, enigme_t *enig) {
-	int i, x, y, offset;
-	char c;
 
-	if (strlen(data) < 33) {
+	if (strlen(data) < 13) {
 		return;
 	}
 
-	const int nb_carac_separator = 2;
-	for (i = 0, offset = 1; i < NB_ROBOT + 1; i++) {
-		sscanf(data + offset, "%d%c,%d%c,", &x, &c, &y, &c);
-//		printf("%d%c,%d%c,\n", x, c, y, c); // DEBUG
-		switch (c) {
-		case 'r':
-			enig->robots[ROBOT_R].x = x;
-			enig->robots[ROBOT_R].y = y;
-			enig->robots[ROBOT_R].c = Rouge;
-			sprintf(enig->robots[ROBOT_R].path, "%srobot%c%s", ASSETS, c,
-			EXT_IMG);
-			break;
-		case 'b':
-			enig->robots[ROBOT_B].x = x;
-			enig->robots[ROBOT_B].y = y;
-			enig->robots[ROBOT_B].c = Bleu;
-			sprintf(enig->robots[ROBOT_B].path, "%srobot%c%s", ASSETS, c,
-			EXT_IMG);
-			break;
-		case 'j':
-			enig->robots[ROBOT_J].x = x;
-			enig->robots[ROBOT_J].y = y;
-			enig->robots[ROBOT_J].c = Jaune;
-			sprintf(enig->robots[ROBOT_J].path, "%srobot%c%s", ASSETS, c,
-			EXT_IMG);
-			break;
-		case 'v':
-			enig->robots[ROBOT_V].x = x;
-			enig->robots[ROBOT_V].y = y;
-			enig->robots[ROBOT_V].c = Vert;
-			sprintf(enig->robots[ROBOT_V].path, "%srobot%c%s", ASSETS, c,
-			EXT_IMG);
-			break;
-		case 'c':
-			enig->cible.x = x;
-			enig->cible.y = y;
-			offset += nb_carac_separator + (x / 10 + 1) + (y / 10 + 1) + 2;
-			sscanf(data + offset, "%c", &enig->cible.c);
-			sprintf(enig->cible.path, "%scible%c%s", ASSETS, enig->cible.c,
-			EXT_IMG);
-//			printf("color %c\n", enig->cible.c); // DEBUG
-			break;
-		}
-		offset += nb_carac_separator + (x / 10 + 1) + (y / 10 + 1) + 2;
-	}
+	sscanf(data, "(%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%c)", &enig->robots[ROBOT_R].x,
+			&enig->robots[ROBOT_R].y, &enig->robots[ROBOT_B].x,
+			&enig->robots[ROBOT_B].y, &enig->robots[ROBOT_J].x,
+			&enig->robots[ROBOT_J].y, &enig->robots[ROBOT_V].x,
+			&enig->robots[ROBOT_V].y, &enig->cible.x, &enig->cible.y,
+			&enig->cible.c);
+
+	enig->robots[ROBOT_R].c = Rouge;
+	sprintf(enig->robots[ROBOT_R].path, "%srobotr%s", ASSETS,
+	EXT_IMG);
+
+	enig->robots[ROBOT_B].c = Bleu;
+	sprintf(enig->robots[ROBOT_B].path, "%srobotb%s", ASSETS,
+	EXT_IMG);
+
+	enig->robots[ROBOT_J].c = Jaune;
+	sprintf(enig->robots[ROBOT_J].path, "%srobotj%s", ASSETS,
+	EXT_IMG);
+
+	enig->robots[ROBOT_V].c = Vert;
+	sprintf(enig->robots[ROBOT_V].path, "%srobotv%s", ASSETS,
+	EXT_IMG);
+
+	sprintf(enig->cible.path, "%scible%c%s", ASSETS, enig->cible.c,
+	EXT_IMG);
 
 }
 

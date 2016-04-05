@@ -22,7 +22,7 @@
 
 #define SIG_COM (SIGRTMIN + 3)
 #define SIG_IHM (SIGRTMIN + 4)
-#define IP_ADDR "127.0.0.1"
+#define IP_ADDR "132.227.115.112"
 
 /********** variable globale ****************/
 pthread_t thread_com, thread_chat;
@@ -103,6 +103,10 @@ void traitement(char **tab) {
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(ILATROUVE, tab[0])) {
 		user_t *u = getuser(tab[1], &bilan.list_users);
+		if (u == NULL) {
+			fprintf(stderr, "user not exist %s \n", tab[1]);
+			return;
+		}
 		u->nb_coups = atoi(tab[2]);
 
 		memset(msg_signal, 0, sizeof(msg_signal));
@@ -116,6 +120,10 @@ void traitement(char **tab) {
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(VALIDATION, tab[0])) {
 		user_t *u = getuser(myName, &bilan.list_users);
+		if (u == NULL) {
+			fprintf(stderr, "user not exist %s \n", tab[1]);
+			return;
+		}
 		u->nb_coups = valideCoups;
 		valideCoups = -1;
 		memset(msg_signal, 0, sizeof(msg_signal));
@@ -132,6 +140,11 @@ void traitement(char **tab) {
 		memset(msg_signal, 0, sizeof(msg_signal));
 		sprintf(msg_signal, "New enchere %s %s", tab[1], tab[2]);
 		user_t *u = getuser(tab[1], &bilan.list_users);
+		if (u == NULL) {
+			fprintf(stderr, "user not exist %s \n", tab[1]);
+			return;
+		}
+		printf("bonojour %s %s %s\n", tab[0], tab[1], tab[2]);
 		u->nb_coups = atoi(tab[2]);
 		valeur.sival_int = SIGALEMENT | UPDATE_L;
 		sigqueue(pid_main, SIG_IHM, valeur);
@@ -240,7 +253,7 @@ void *run_com(void *arg) {
 
 	while (TRUE) {
 		read_response(sc, response);
-//		printf("com: recu reponse len %zu : %s\n", strlen(response), response);
+		printf("com: recu reponse len %zu : %s\n", strlen(response), response);
 
 		if (0 == strlen(response)) {
 			fprintf(stderr, "ERROR : Connection Socket");
