@@ -26,9 +26,9 @@ void test_users() {
 	bil.list_users.nb = 0;
 	bil.list_users.first = NULL;
 
-	adduser("ashraf",0, &bil.list_users);
-	adduser("nasser",0, &bil.list_users);
-	adduser("ali",0, &bil.list_users);
+	adduser("ashraf", 0, &bil.list_users);
+	adduser("nasser", 0, &bil.list_users);
+	adduser("ali", 0, &bil.list_users);
 
 	test_aff(&bil.list_users);
 
@@ -98,10 +98,31 @@ void affCase(int d) {
 		printf("CSMUR OK \n");
 
 }
+
+void test_string2arry() {
+	int i = 0, size = 0, j;
+	char **tab = NULL;
+	char* msg[7];
+	msg[0] = "ash/nas/foo/var/";
+	msg[1] = "/ash//nas/foo/var/";
+	msg[2] = "ashxccxvx/xcvxc/\n";
+	msg[3] = "aaaa/bbbb/cccc/\n";
+	msg[4] = "//\n";
+	msg[5] = "BIENVENUE/\n";
+	msg[6] = "fff/";
+	for (j = 0; j < 7; ++j) {
+		tab = string_to_arraystring(msg[j], &size, '/');
+		printf("traitement msg%d : %s ==> part %d\n", j, msg[j], size);
+		for (i = 0; i < size; i++) {
+			if (tab[i])
+				printf("part%d : %s\n", i, tab[i]);
+			else
+				printf("part%d : NULL\n", i);
+		}
+		free_table(tab, size);
+	}
+}
 void test(int d) {
-	printf("test iciiii\n");
-	parse_bilan("6(saucisse,223)(brouette,0)", &bilan);
-	printf("aff\n");
-	test_aff(&bilan.list_users);
+	test_string2arry();
 
 }

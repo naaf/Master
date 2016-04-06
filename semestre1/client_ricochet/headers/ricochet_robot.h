@@ -50,6 +50,11 @@ typedef struct _user {
 
 } user_t;
 
+typedef struct{
+	int val;
+	char* data;
+}SigMsg;
+
 typedef struct {
 	int nb;
 	user_t* first;

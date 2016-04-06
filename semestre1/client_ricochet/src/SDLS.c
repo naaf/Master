@@ -22,7 +22,6 @@ Uint32 SDLS_couleur(int r, int g, int b) {
 	return (((r << 8) + g) << 8) + b;
 }
 
-
 void SDLS_affiche_image(char * fname, SDL_Renderer * ren, int x, int y) {
 	SDL_Texture * tex = 0;
 	SDL_Rect dst;
@@ -79,7 +78,8 @@ void SDLs_dessin(SDL_Texture * tex, SDL_Renderer * ren, int x, int y) {
 	SDL_RenderCopy(ren, tex, NULL, &dst);
 //	SDL_RenderPresent(ren);
 }
-SDL_Texture* txt2Texture(SDL_Renderer *ren,TTF_Font *font, SDL_Color *color, char* msg) {
+SDL_Texture* txt2Texture(SDL_Renderer *ren, TTF_Font *font, SDL_Color *color,
+		char* msg) {
 	SDL_Surface *surf;
 	SDL_Texture *tex;
 	surf = TTF_RenderText_Blended(font, msg, *color);
@@ -87,4 +87,51 @@ SDL_Texture* txt2Texture(SDL_Renderer *ren,TTF_Font *font, SDL_Color *color, cha
 
 	SDL_FreeSurface(surf);
 	return tex;
+}
+
+bool_t saveScreenshotBMP(char* filepath, SDL_Window* SDLWindow,
+		SDL_Renderer* SDLRenderer) {
+	SDL_Surface* saveSurface = NULL;
+	SDL_Surface* infoSurface = NULL;
+	infoSurface = SDL_GetWindowSurface(SDLWindow);
+	if (infoSurface == NULL) {
+		printf(
+				"Failed to create info surface from window in saveScreenshotBMP(string), SDL_GetError() - ");
+	} else {
+		unsigned char pixels[infoSurface->w * infoSurface->h
+				* infoSurface->format->BytesPerPixel];
+		if (pixels == 0) {
+			printf(
+					"Unable to allocate memory for screenshot pixel data buffer!\n");
+			return FALSE;
+		} else {
+			if (SDL_RenderReadPixels(SDLRenderer, &infoSurface->clip_rect,
+					infoSurface->format->format, pixels,
+					infoSurface->w * infoSurface->format->BytesPerPixel) != 0) {
+				printf(
+						"Failed to read pixel data from SDL_Renderer object. SDL_GetError()%s - ",
+						SDL_GetError());
+
+				return FALSE;
+			} else {
+				saveSurface = SDL_CreateRGBSurfaceFrom(pixels, infoSurface->w,
+						infoSurface->h, infoSurface->format->BitsPerPixel,
+						infoSurface->w * infoSurface->format->BytesPerPixel,
+						infoSurface->format->Rmask, infoSurface->format->Gmask,
+						infoSurface->format->Bmask, infoSurface->format->Amask);
+				if (saveSurface == NULL) {
+					printf(
+							"Couldn't create SDL_Surface from renderer pixel data. SDL_GetError() - ");
+					return FALSE;
+				}
+				SDL_SaveBMP(saveSurface, filepath);
+				SDL_FreeSurface(saveSurface);
+				saveSurface = NULL;
+			}
+
+		}
+		SDL_FreeSurface(infoSurface);
+		infoSurface = NULL;
+	}
+	return TRUE;
 }

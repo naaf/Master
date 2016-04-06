@@ -19,7 +19,7 @@ extern enigme_t enigme;
 extern bilan_t bilan;
 extern plateau_t initPl;
 extern enigme_t initEnigme;
-extern int typeTraitement;
+extern int attenteTraitement;
 extern char msg_signal[128];
 extern int sc;
 extern bool_t moiJoue;
@@ -37,38 +37,42 @@ TTF_Font *font;
 SDL_Color colorBlack = { 0, 0, 0, 0 };
 
 void gest_ihm(int signum, siginfo_t * info, void * vide) {
+	SigMsg *sigMsg = (SigMsg*) info->si_value.sival_ptr;
+	fprintf(stderr, "gest_ihm %d \n", sigMsg->val);
 
-	typeTraitement |= info->si_value.sival_int;
-	if ( SIGALEMENT & info->si_value.sival_int) {
+	attenteTraitement |= sigMsg->val;
+	if ( SIGALEMENT & sigMsg->val) {
 		displayMsg(msg_signal, FALSE);
 	}
-	if ( PHASE_REFLEX & info->si_value.sival_int) {
+	if ( PHASE_REFLEX & sigMsg->val) {
 		currentPhase = PHASE_REFLEX;
+		onclickReset(pl, &enigme, NULL, NULL, NULL, NULL);
 		displayMsg("REFLEXION", TRUE);
 		timeStart = SDL_GetTicks();
+
 	}
-	if ( PHASE_ENCHERE & info->si_value.sival_int) {
+	if ( PHASE_ENCHERE & sigMsg->val) {
 		currentPhase = PHASE_ENCHERE;
 		displayMsg("ENCHERE", TRUE);
 		timeStart = SDL_GetTicks();
 	}
-	if ( PHASE_RESO & info->si_value.sival_int) {
+	if ( PHASE_RESO & sigMsg->val) {
 		currentPhase = PHASE_RESO;
 		displayMsg("SOLUTION", TRUE);
 		timeStart = SDL_GetTicks();
 	}
-	if ( FIN_TOUR & info->si_value.sival_int) {
+	if ( FIN_TOUR & sigMsg->val) {
 		awaitLoadingTexte("ATTENTE TOUR", PHASE_REFLEX);
 		onclickReset(pl, &enigme, NULL, NULL, NULL, NULL);
 		display_bilan(&bilan);
 	}
-	if ( FIN_SESSION & info->si_value.sival_int) {
+	if ( FIN_SESSION & sigMsg->val) {
 		awaitLoadingTexte("attente de session ", PHASE_SESSION);
 	}
-	if ( UPDATE_L & info->si_value.sival_int) {
+	if ( UPDATE_L & sigMsg->val) {
 		display_bilan(&bilan);
 	}
-
+	free(sigMsg);
 }
 
 int estEntier(char *s) {
@@ -116,7 +120,7 @@ int awaitLoading() {
 	int i = 0, j;
 	j = 0;
 
-	while (!(typeTraitement & FIN_CONNEXION) && !quit) {
+	while (!(attenteTraitement & FIN_CONNEXION) && !quit) {
 
 		SDL_PollEvent(&event);
 		if (event.type == SDL_QUIT) {
@@ -136,7 +140,7 @@ int awaitLoading() {
 		j = (1 + j) % 5;
 
 	}
-	typeTraitement &= ~FIN_CONNEXION;
+	attenteTraitement &= ~FIN_CONNEXION;
 	return quit;
 }
 void erreur(char *msg, bool_t fin) {
@@ -194,7 +198,8 @@ int awaitLoadingTexte(char* msg, int attente) {
 	int i = 0;
 	int j = 0;
 	char *ps;
-	while (!(typeTraitement & attente) && !quit) {
+	while (!(attenteTraitement & attente) && !quit) {
+		printf("boucle..");
 		if (j == 0) {
 			ps = i == 0 ? "." : i == 1 ? "..." : "....";
 			msg_Tx = txt2Texture(ren, font, &color, ps);
@@ -214,7 +219,7 @@ int awaitLoadingTexte(char* msg, int attente) {
 	SDL_RenderCopy(ren, emptyInput_Tx, &rectSrc, &rectDst);
 	SDL_RenderPresent(ren);
 	TTF_CloseFont(font);
-	typeTraitement &= ~attente;
+	attenteTraitement &= ~attente;
 	return quit;
 }
 bool_t estContenu(SDL_Rect *rect, SDL_MouseMotionEvent* p) {
@@ -505,11 +510,8 @@ int ihm1() {
 
 	displayAccueil(win, ren);
 	SDLS_affiche_image("assets/pl.png", ren, 0, 0);
-//	init_plateau(pl); // TODO Sup
-//	parse_plateau("(3,4,H)(3,4,G)(12,6,H)(1,4,H)(9,4,G)(15,6,H)(15,6,T)", pl); // TODO sup
-	if (awaitLoadingTexte("attente de session ", PHASE_SESSION)) {
-		goto fin;
-	}
+
+	awaitLoadingTexte("attente de session ", PHASE_SESSION);
 
 	focusCoup = preFocusCoup = FALSE;
 	focusUser = preFocusUser = FALSE;
@@ -520,39 +522,25 @@ int ihm1() {
 	memset(moves, 0, sizeof(moves));
 	memset(move, 0, sizeof(move));
 	memset(coups, 0, sizeof(coups));
-	SDLS_affiche_image("assets/pl.png", ren, 0, 0);
-	display_plateau(pl);
+	if (!quit) {
+		SDLS_affiche_image("assets/pl.png", ren, 0, 0);
+		display_plateau(pl);
 
-	if (awaitLoadingTexte("attente d'enigme ", PHASE_REFLEX)) {
-		goto fin;
-	}
-//	parse_enigme("13r,5r,2b,2b,12j,2j,3v,13v,4c,4c,R)", &enigme); //TODO SUP
-//	parse_bilan("6(saucisse,223)(brouette,0)(zak,1234)(ashraf,512)", &bilan); //TODO SUP
-//	user_t *usr = getuser("ashraf", &bilan.list_users); //TODO SUP
-//	usr->solution = strdup("VBRGBHJD"); //TODO SUP
-//	usr = getuser("saucisse", &bilan.list_users); //TODO SUP
-//	usr->solution = strdup("VBRGBHJDR"); //TODO SUP
+		awaitLoadingTexte("attente d'enigme ", PHASE_REFLEX);
 
-
-	display_enigme(&enigme);
-	display_bilan(&bilan);
-
-//	displayMsg("PHASE REFLEXION");TODO SUP
-//	SDL_Delay(1000);
-//	displayMsg("PHASE ENCHERE");
-//	SDL_Delay(1000);
-//	displayMsg("PHASE SOLUTION");
-//	SDL_Delay(1000);
-//	//TODO SUP
+		display_enigme(&enigme);
+		display_bilan(&bilan);
 
 // display labelCoup
-	tmp_Tx = txt2Texture(ren, font, &colorBlack, labelCoup);
-	SDL_QueryTexture(tmp_Tx, NULL, NULL, &rectLabelCoup.w, &rectLabelCoup.h);
-	SDL_RenderCopy(ren, tmp_Tx, NULL, &rectLabelCoup);
-	SDL_RenderPresent(ren);
-	TTF_CloseFont(font);
-	font = TTF_OpenFont("assets/dayrom.TTF", 20);
-
+		tmp_Tx = txt2Texture(ren, font, &colorBlack, labelCoup);
+		SDL_QueryTexture(tmp_Tx, NULL, NULL, &rectLabelCoup.w,
+				&rectLabelCoup.h);
+		SDL_RenderCopy(ren, tmp_Tx, NULL, &rectLabelCoup);
+		SDL_RenderPresent(ren);
+		TTF_CloseFont(font);
+		font = TTF_OpenFont("assets/dayrom.TTF", 20);
+	}
+	saveScreenshotBMP("testSave.png", win, ren);
 	SDL_StartTextInput();
 	int k, save_yUser;
 
@@ -579,9 +567,8 @@ int ihm1() {
 					}
 				}
 			}
-//			handle btn reset
-			if (estContenu(&rectReset, &event.motion)
-					|| estContenu(&rectCoup, &event.motion)) {
+//			handle btn reset /*|| estContenu(&rectCoup, &event.motion)*/
+			if (estContenu(&rectReset, &event.motion)) {
 				if (strlen(moves) > 0 || strlen(coups) > 0) {
 					onclickReset(initPl, &initEnigme, coups, moves, &rectCoup,
 							&rectEmpty);
@@ -732,7 +719,7 @@ int ihm1() {
 		SDL_RenderCopy(ren, tmp_Tx, &rectEmpty, &rectTime);
 		SDL_RenderPresent(ren);
 	}
-	fin: TTF_CloseFont(font);
+	TTF_CloseFont(font);
 	SDL_DestroyRenderer(ren);
 	SDL_DestroyWindow(win);
 	send_request(sc, 2, SORT, myName);

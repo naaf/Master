@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "../headers/ricochet_robot.h"
 #include "../headers/ihm.h"
 
@@ -30,17 +31,19 @@ char** string_to_arraystring(char* data, int* size, char separator) {
 	}
 	tab = malloc((*size) * sizeof(char*));
 	*size = 0;
-	for (i = 0, cptLettre = 1; i < lenght; ++i, cptLettre++) {
+	for (i = 0, cptLettre = 0; i < lenght; ++i, cptLettre++) {
 		if (data[i] == separator) {
 			if (cptLettre > 0) {
-				tab[*size] = (char*) malloc(cptLettre);
-				strncpy(tab[*size], data + pos, cptLettre - 1);
-				tab[*size][cptLettre - 1] = 0;
-				*size = *size + 1;
-				pos = i + 1;
-				cptLettre = 0;
-			}
+				tab[*size] = (char*) malloc(cptLettre + 1);
+				strncpy(tab[*size], data + pos, cptLettre);
+				tab[*size][cptLettre] = 0;
 
+			} else {
+				tab[*size] = NULL;
+			}
+			*size = *size + 1;
+			pos = i + 1;
+			cptLettre = -1;
 		}
 	}
 
@@ -50,7 +53,8 @@ char** string_to_arraystring(char* data, int* size, char separator) {
 void free_table(char** tab, int size) {
 	int i;
 	for (i = 0; i < size; ++i) {
-		free(tab[i]);
+		if (tab[i])
+			free(tab[i]);
 	}
 	free(tab);
 }

@@ -22,7 +22,7 @@
 
 #define SIG_COM (SIGRTMIN + 3)
 #define SIG_IHM (SIGRTMIN + 4)
-#define IP_ADDR "132.227.113.98"
+#define IP_ADDR "127.0.0.1"
 
 /********** variable globale ****************/
 pthread_t thread_com, thread_chat;
@@ -39,22 +39,25 @@ bilan_t bilan;
 plateau_t initPl;
 enigme_t initEnigme;
 
-int typeTraitement;
+int attenteTraitement;
 char msg_signal[256];
 
 void gest_ihm(int signum, siginfo_t * info, void * vide);
 
 void traitement(char **tab, int size) {
-	union sigval valeur;
-
 	if (tab == NULL) {
 		fprintf(stderr, "ERROR traitement commande NULL inconnu \n");
 		return;
 	}
-	fprintf(stderr, "traite %s \n", tab[0]);
+	union sigval valeur;
+	SigMsg *sigMsg = malloc(sizeof(SigMsg));
+	sigMsg->data = NULL;
+	sigMsg->val = 0;
+	fprintf(stderr, "traite %s \n", tab[0]); //DEBUG
 	if (!strcmp(BIENVENUE, tab[0])) {
 		etat |= FIN_CONNEXION;
-		valeur.sival_int = FIN_CONNEXION;
+		sigMsg->val = FIN_CONNEXION;
+		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(CONNECTE, tab[0])) {
 		if (size < 2) {
@@ -62,7 +65,8 @@ void traitement(char **tab, int size) {
 			return;
 		}
 		adduser(tab[1], 0, &bilan.list_users);
-		valeur.sival_int = UPDATE_L;
+		sigMsg->val = UPDATE_L;
+		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(DECONNEXION, tab[0])) {
 		if (size < 2) {
@@ -70,7 +74,8 @@ void traitement(char **tab, int size) {
 			return;
 		}
 		removeuser(tab[1], &bilan.list_users);
-		valeur.sival_int = UPDATE_L;
+		sigMsg->val = UPDATE_L;
+		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(SESSION, tab[0])) {
 		if (size < 2) {
@@ -79,11 +84,11 @@ void traitement(char **tab, int size) {
 		}
 		if (etat & FIN_CONNEXION) {
 			etat |= PHASE_SESSION;
-			fprintf(stderr, "%s\n", tab[1]);
 			init_plateau(pl);
 			parse_plateau(tab[1], pl);
 			cpyPlateau(pl, initPl);
-			valeur.sival_int = PHASE_SESSION;
+			sigMsg->val = PHASE_SESSION;
+			valeur.sival_ptr = sigMsg;
 			sigqueue(pid_main, SIG_IHM, valeur);
 		} else {
 			erreur("ERREUR Protocol envois SESSION sans CONNEXION", FALSE);
@@ -95,7 +100,8 @@ void traitement(char **tab, int size) {
 		}
 		etat &= ~PHASE_SESSION;
 		parse_bilan(tab[1], &bilan);
-		valeur.sival_int = FIN_SESSION;
+		sigMsg->val = FIN_SESSION;
+		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur); //TODO
 	} else if (!strcmp(TOUR, tab[0])) {
 		if (size < 3) {
@@ -108,7 +114,8 @@ void traitement(char **tab, int size) {
 			cpyEnigme(&enigme, &initEnigme);
 			cpyPlateau(initPl, pl);
 			bind_enigme_plateau(pl, &enigme);
-			valeur.sival_int = PHASE_REFLEX;
+			sigMsg->val = PHASE_REFLEX;
+			valeur.sival_ptr = sigMsg;
 			sigqueue(pid_main, SIG_IHM, valeur);
 		} else {
 			erreur("ERREUR Protocol envois TOUR sans SESSION", FALSE);
@@ -117,7 +124,8 @@ void traitement(char **tab, int size) {
 	} else if (!strcmp(TUASTROUVE, tab[0])) {
 		memset(msg_signal, 0, sizeof(msg_signal));
 		strcpy(msg_signal, "Tu as trouve solution");
-		valeur.sival_int = PHASE_ENCHERE | SIGALEMENT;
+		sigMsg->val = PHASE_ENCHERE | SIGALEMENT;
+		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(ILATROUVE, tab[0])) {
 		if (size < 3) {
@@ -133,39 +141,38 @@ void traitement(char **tab, int size) {
 
 		memset(msg_signal, 0, sizeof(msg_signal));
 		sprintf(msg_signal, "%s trouve en %s coups", tab[1], tab[2]);
-		valeur.sival_int = PHASE_ENCHERE | SIGALEMENT | UPDATE_L;
+		sigMsg->val = PHASE_ENCHERE | SIGALEMENT | UPDATE_L;
+		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(FINREFLEXION, tab[0])) {
 
 		memset(msg_signal, 0, sizeof(msg_signal));
 		strcpy(msg_signal, "Fin reflexion timeout");
-		valeur.sival_int = PHASE_ENCHERE | SIGALEMENT;
+		sigMsg->val = PHASE_ENCHERE | SIGALEMENT;
+		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(VALIDATION, tab[0])) {
 		if (size < 1) {
 			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
 			return;
 		}
-		if (size < 2) {
-			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
-			return;
-		}
 		user_t *u = getuser(myName, &bilan.list_users);
 		if (u == NULL) {
-			fprintf(stderr, "user not exist %s \n", tab[1]);
-			return;
+			erreur("fatal erreur ", TRUE);
 		}
 		u->nb_coups = valideCoups;
 		valideCoups = -1;
 		memset(msg_signal, 0, sizeof(msg_signal));
 		strcpy(msg_signal, "enchere Valide");
-		valeur.sival_int = SIGALEMENT | UPDATE_L;
+		sigMsg->val = SIGALEMENT | UPDATE_L;
+		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(ECHEC, tab[0])) {
 		valideCoups = -1;
 		memset(msg_signal, 0, sizeof(msg_signal));
 		strcpy(msg_signal, "ECHEC enchere");
-		valeur.sival_int = SIGALEMENT;
+		sigMsg->val = SIGALEMENT;
+		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(NOUVELLEENCHERE, tab[0])) {
 		if (size < 3) {
@@ -179,20 +186,22 @@ void traitement(char **tab, int size) {
 			fprintf(stderr, "user not exist %s \n", tab[1]);
 			return;
 		}
-		printf("bonojour %s %s %s\n", tab[0], tab[1], tab[2]);
 		u->nb_coups = atoi(tab[2]);
-		valeur.sival_int = SIGALEMENT | UPDATE_L;
+		sigMsg->val = SIGALEMENT | UPDATE_L;
+		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 
 	} else if (!strcmp(FINENCHERE, tab[0])) {
-		if (size < 3) {
+		if (size < 3 || tab[1] == NULL) {
 			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
 			return;
 		}
+		moiJoue = FALSE;
 		if (!strcmp(myName, tab[1])) {
 			moiJoue = TRUE;
 		}
-		valeur.sival_int = PHASE_RESO;
+		sigMsg->val = PHASE_RESO;
+		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 
 	} else if (!strcmp(SASOLUTION, tab[0])) {
@@ -214,11 +223,12 @@ void traitement(char **tab, int size) {
 	} else if (!strcmp(BONNE, tab[0])) {
 		memset(msg_signal, 0, sizeof(msg_signal));
 		strcpy(msg_signal, "VOUS GAGNEZ");
-		valeur.sival_int = FIN_TOUR | SIGALEMENT;
+		sigMsg->val = FIN_TOUR | SIGALEMENT;
+		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 
 	} else if (!strcmp(MAUVAISE, tab[0])) {
-		if (size < 2) {
+		if (size < 2 || tab[1] == NULL) {
 			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
 			return;
 		}
@@ -228,41 +238,43 @@ void traitement(char **tab, int size) {
 			strcpy(msg_signal, "A MOI de Jouer");
 
 		} else {
+			moiJoue = FALSE;
 			sprintf(msg_signal, "%s joue", tab[1]);
 		}
-		valeur.sival_int = SIGALEMENT;
+		sigMsg->val = SIGALEMENT;
+		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 
 	} else if (!strcmp(FINRESO, tab[0])) {
-		valeur.sival_int = FIN_TOUR;
+		sigMsg->val = FIN_TOUR;
+		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(TROPLONG, tab[0])) {
+		if (size < 2 || tab[1] == NULL) {
+			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
+			return;
+		}
+		memset(msg_signal, 0, sizeof(msg_signal));
+		if (!strcmp(myName, tab[1])) {
+			moiJoue = TRUE;
+			strcpy(msg_signal, "A MOI de Jouer");
+		} else {
+			moiJoue = FALSE;
+			sprintf(msg_signal, "%s joue ", tab[1]);
+		}
+		sigMsg->val = SIGALEMENT;
+		valeur.sival_ptr = sigMsg;
+		sigqueue(pid_main, SIG_IHM, valeur);
+	} else if (!strcmp(CHAT, tab[0])) {
 		if (size < 3) {
 			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
 			return;
 		}
-		memset(msg_signal, 0, sizeof(msg_signal));
-		if (!strcmp(myName, tab[1])) {
-			moiJoue = TRUE;
-			strcpy(msg_signal, "A MOI de Jouer");
-		} else {
-			sprintf(msg_signal, "%s joue ", tab[1]);
-		}
-		valeur.sival_int = SIGALEMENT;
-		sigqueue(pid_main, SIG_IHM, valeur);
-	} else if (!strcmp(CHAT, tab[0])) {
 		printf("%s : %s", tab[1], tab[2]);
 	} else {
 		fprintf(stderr, "ERROR de protocol %s inconnu \n", tab[0]);
 	}
-}
 
-void aff(char c) {
-	while (1) {
-		printf("%c", c);
-		sleep(1);
-		fflush(stdout);
-	}
 }
 
 void *run_chat(void *arg) {
@@ -278,16 +290,16 @@ void *run_chat(void *arg) {
 	while (TRUE) {
 		printf("entrez votre msg : ");
 		fflush(stdout);
-		fgets(entree, sizeof(entree), stdin);
+		read_response(STDIN_FILENO, entree);
 //		printf("envois : %s", entree);
-		send_request(sc, 2, CHAT, entree);
+		send_request(sc, 3, CHAT, myName, entree);
 		memset(entree, 0, strlen(entree) + 2);
 	}
 	return NULL;
 }
 
 void *run_com(void *arg) {
-	char response[1024];
+	char response[512];
 	char **tab = NULL;
 	int size;
 
@@ -304,7 +316,8 @@ void *run_com(void *arg) {
 
 	while (TRUE) {
 		read_response(sc, response);
-		printf("com: recu reponse len %zu : %s\n", strlen(response), response);
+		fprintf(stderr, "com: recu reponse len %zu : %s\n", strlen(response),
+				response);
 
 		if (0 == strlen(response)) {
 			fprintf(stderr, "ERROR : Connection Socket");
@@ -318,7 +331,7 @@ void *run_com(void *arg) {
 
 		/*free resources*/
 		free_table(tab, size);
-		memset(response, 0, strlen(response) + 1);
+		memset(response, 0, sizeof(response));
 	}
 	pthread_cancel(thread_chat); //TODO
 	return NULL;
@@ -332,14 +345,14 @@ int main(int argc, char** argv) {
 	sigset_t mask;
 	struct sigaction action;
 	/*--------------initialisation vars global--------------*/
-	typeTraitement = 0;
+	attenteTraitement = 0;
 	etat = 0;
 	moiJoue = FALSE;
 	quit = FALSE;
 	/*--------Initialisation et gestions des signaux--------*/
 
 	action.sa_sigaction = gest_ihm;
-	action.sa_flags = SA_SIGINFO ;
+	action.sa_flags = SA_SIGINFO|SA_RESTART;
 	sigfillset(&mask);
 	sigdelset(&mask, SIG_IHM);
 	sigdelset(&mask, SIGINT);
@@ -370,7 +383,7 @@ int main(int argc, char** argv) {
 
 	ihm();
 //	test();
-//	/*--------------------Fin de main----------------------*/
+	/*--------------------Fin de main----------------------*/
 	pthread_join(thread_com, NULL);
 	pthread_join(thread_chat, NULL);
 	if (bilan.list_users.nb != 0) {
