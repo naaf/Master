@@ -37,10 +37,8 @@ char coups[5];
 static SDL_Texture *empty_Tx;
 SDL_Renderer *ren;
 SDL_Window *win;
-
+TTF_Font *font;
 SDL_Color colorBlack = { 0, 0, 0, 0 };
-SDL_Rect rectCoup = { 12 * CASE, 17 * CASE, CASE * 4, 64 };
-SDL_Rect rectEmpty = { 0, 0, 64, 32 };
 
 void gest_ihm(int signum, siginfo_t * info, void * vide) {
 	SigMsg *sigMsg = (SigMsg*) info->si_value.sival_ptr;
@@ -49,31 +47,26 @@ void gest_ihm(int signum, siginfo_t * info, void * vide) {
 	attenteTraitement |= sigMsg->val;
 
 	if ( PHASE_SESSION & sigMsg->val) {
-//		pthread_mutex_lock(&mutex);
-		init_plateau(pl);
-		parse_plateau(sigMsg->data, pl);
-		cpyPlateau(pl, initPl);
-//		pthread_mutex_unlock(&mutex);
-
-		free(sigMsg->data);
+		printf("pl %s \n", sigMsg->data);
+		init_plateau(initPl);
+		parse_plateau(sigMsg->data, initPl);
+		cpyPlateau(initPl, pl);
 		display_plateau(pl);
 	}
 
 	if ( PHASE_REFLEX & sigMsg->val) {
 
 		printf("phase reflexion %s , %s\n", sigMsg->data, sigMsg->data2);
-//		pthread_mutex_lock(&mutex);
-		parse_enigme(sigMsg->data, &enigme);
+
+		parse_enigme(sigMsg->data, &initEnigme);
 		parse_bilan(sigMsg->data2, &bilan);
-		cpyEnigme(&enigme, &initEnigme);
+		cpyEnigme(&initEnigme, &enigme);
 		cpyPlateau(initPl, pl);
 		bind_enigme_plateau(pl, &enigme);
-//		pthread_mutex_unlock(&mutex);
 
 		currentPhase = PHASE_REFLEX;
 
-		resetcoups();
-		updateView();
+		onclickReset(pl, &enigme, coups, moves);
 		display_bilan(&bilan);
 		displayMsg("REFLEXION", TRUE);
 		timeStart = SDL_GetTicks();
@@ -93,29 +86,8 @@ void gest_ihm(int signum, siginfo_t * info, void * vide) {
 	}
 
 	if ( UPDATE_L & sigMsg->val) {
-		if (sigMsg->data != NULL && sigMsg->u == NULL) {
-			adduser(sigMsg->data, 0, &bilan.list_users);
-			free(sigMsg->data);
-		}
-		if (sigMsg->data2 != NULL && sigMsg->u == NULL) {
-			removeuser(sigMsg->data2, &bilan.list_users);
-			free(sigMsg->data);
-		}
-
 		display_bilan(&bilan);
 	}
-	if ( UPDATE_U & sigMsg->val) {
-		user_t *u = getuser(sigMsg->data, &bilan.list_users);
-		if (u == NULL) {
-			fprintf(stderr, "user not exist %s \n", sigMsg->data);
-			return;
-		}
-		u->nb_coups = atoi(sigMsg->data2);
-		free(sigMsg->data);
-		free(sigMsg->data2);
-		display_bilan(&bilan);
-	}
-
 	if ( SIGALEMENT & sigMsg->val) {
 		displayMsg(msg_signal, FALSE);
 	}
@@ -129,32 +101,34 @@ int estEntier(char *s) {
 	return -1;
 }
 
-void resetcoups() {
-	memset(moves, 0, (int) sizeof(moves));
-	memset(coups, 0, (int) sizeof(moves));
-	sprintf(coups, "%d", 0);
-}
-
-void updateView() {
+void updateView(SDL_Rect* rectCoup, SDL_Rect* rectEmpty) {
 	SDL_Texture *tmp_Tx;
-	TTF_Font *font;
-	font = TTF_OpenFont("assets/dayrom.TTF", 14);
+
 	display_plateau(pl);
 	display_enigme(&enigme);
 
 	tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
-	displayCoup(tmp_Tx, rectCoup, &rectEmpty);
-	TTF_CloseFont(font);
+	displayCoup(tmp_Tx, *rectCoup, rectEmpty);
+
 	SDL_RenderPresent(ren);
 }
 
 void onclickReset(plateau_t srcPl, enigme_t *srcE, char* coups, char* moves) {
 
-//	pthread_mutex_lock(&mutex);
+	SDL_Rect rectSrc = { 12 * CASE, 17 * CASE, CASE * 4, 64 };
+	SDL_Rect rectDst = { 0, 0, 64, 32 };
+	SDL_Texture *tmp_Tx;
+
 	cpyEnigme(srcE, &enigme);
 	cpyPlateau(srcPl, pl);
-//	pthread_mutex_unlock(&mutex);
-	resetcoups();
+	if (coups != NULL) {
+		memset(moves, 0, (int) sizeof(moves));
+		memset(coups, 0, (int) sizeof(moves));
+
+		sprintf(coups, "%d", 0);
+		tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
+		displayCoup(tmp_Tx, rectSrc, &rectDst);
+	}
 
 	display_plateau(pl);
 	display_enigme(&enigme);
@@ -210,7 +184,7 @@ void displayMsg(char* msg, bool_t phase) {
 	SDL_Color color = { 255, 0, 0, 0 };
 	SDL_Texture *msg_Tx;
 	SDL_Texture *emptyInput_Tx;
-	TTF_Font *font_msg;
+	TTF_Font *font;
 	SDL_Rect rectSrc = { 0, 0, 96, 32 };
 	SDL_Rect rectDst = { 0, 576, 224, 32 };
 	if (phase) {
@@ -223,17 +197,17 @@ void displayMsg(char* msg, bool_t phase) {
 		emptyInput_Tx = IMG_LoadTexture(ren, "assets/inputField.png");
 	}
 	if (phase)
-		font_msg = TTF_OpenFont("assets/dayrom.TTF", 20);
+		font = TTF_OpenFont("assets/dayrom.TTF", 20);
 	else
-		font_msg = TTF_OpenFont("assets/dayrom.TTF", 16);
-	msg_Tx = txt2Texture(ren, font_msg, &color, msg);
+		font = TTF_OpenFont("assets/dayrom.TTF", 16);
+	msg_Tx = txt2Texture(ren, font, &color, msg);
 	SDL_RenderCopy(ren, emptyInput_Tx, &rectSrc, &rectDst);
 	if (!phase)
 		rectDst.w -= 64;
 	SDL_QueryTexture(msg_Tx, NULL, NULL, &rectDst.w, &rectDst.h);
 	SDL_RenderCopy(ren, msg_Tx, NULL, &rectDst);
 	SDL_RenderPresent(ren);
-	TTF_CloseFont(font_msg);
+	TTF_CloseFont(font);
 }
 
 int awaitLoadingTexte(char* msg, int attente) {
@@ -347,10 +321,7 @@ void display_plateau(plateau_t pl) {
 
 		}
 	}
-
 	SDL_RenderPresent(ren);
-	g = 255;
-	SDL_SetRenderDrawColor(ren, r, g, b, a);
 }
 
 void display_enigme(enigme_t *e) {
@@ -536,6 +507,8 @@ int ihm1() {
 	SDL_Rect rectLabelCoup = { 10 * CASE, 16 * CASE + 16, 0, 0 };
 	SDL_Rect rectSendMoves = { 7 * CASE, 17 * CASE, 64, 64 };
 	SDL_Rect rectReset = { 10 * CASE, 17 * CASE, 64, 64 };
+	SDL_Rect rectCoup = { 12 * CASE, 17 * CASE, CASE * 4, 64 };
+	SDL_Rect rectEmpty = { 0, 0, 64, 32 };
 	SDL_Rect rectUser = { 512, 32, 256, 32 };
 	SDL_Rect rectTime = { 3 * CASE, 17 * CASE, 2 * CASE, 32 };
 	SDL_Rect rectVoir = { 19 * CASE, 17 * CASE, 64, 64 };
@@ -555,7 +528,7 @@ int ihm1() {
 	char* labelCoup = "Veuillez entrer le nombre de coups :";
 
 	int x, y, i;
-	TTF_Font *font;
+
 	/*initialisation*/
 	SDLS_init(768, 608, &win, &ren);
 	if (TTF_Init() == -1) {
@@ -564,7 +537,7 @@ int ihm1() {
 	}
 
 	empty_Tx = IMG_LoadTexture(ren, "assets/inputField.png");
-	font = TTF_OpenFont("assets/dayrom.TTF", 14);
+	font = TTF_OpenFont("assets/dayrom.TTF", 12);
 
 	/*** Show **/
 
@@ -591,7 +564,8 @@ int ihm1() {
 				&rectLabelCoup.h);
 		SDL_RenderCopy(ren, tmp_Tx, NULL, &rectLabelCoup);
 		SDL_RenderPresent(ren);
-
+		TTF_CloseFont(font);
+		font = TTF_OpenFont("assets/dayrom.TTF", 20);
 	}
 	SDL_StartTextInput();
 	int k, save_yUser;
@@ -713,7 +687,7 @@ int ihm1() {
 					sprintf(coups, "%d", ((int) (strlen(moves) / 2)));
 
 					//update view
-					updateView();
+					updateView(&rectCoup, &rectEmpty);
 
 					robotSelected = -1;
 					direction = NONE;

@@ -28,10 +28,11 @@ void demarrerVisualisation(int rangUser) {
 		cur = cur->next;
 	}
 	if (!cur->solution) {
-		displayMsg("USER n'a pas de solution",FALSE);
+		displayMsg("USER n'a pas de solution", FALSE);
 		return;
 	} else if (strlen(cur->solution) % 2 != 0) {
-		fprintf(stderr, "ERREUR formatNotCorret de solution %s\n", cur->solution);
+		fprintf(stderr, "ERREUR formatNotCorret de solution %s\n",
+				cur->solution);
 		return;
 	}
 	if (!modeVisualisation) {

@@ -45,6 +45,7 @@ void traitement(char **tab, int size) {
 		fprintf(stderr, "ERROR traitement commande NULL inconnu \n");
 		return;
 	}
+
 	union sigval valeur;
 	SigMsg *sigMsg = malloc(sizeof(SigMsg));
 	sigMsg->data = NULL;
