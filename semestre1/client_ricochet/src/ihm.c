@@ -45,10 +45,21 @@ void gest_ihm(int signum, siginfo_t * info, void * vide) {
 		displayMsg(msg_signal, FALSE);
 	}
 	if ( PHASE_REFLEX & sigMsg->val) {
+
+		parse_enigme(sigMsg->data, &enigme);
+		parse_bilan(sigMsg->data, &bilan);
+		cpyEnigme(&enigme, &initEnigme);
+		cpyPlateau(initPl, pl);
+		bind_enigme_plateau(pl, &enigme);
+		onclickReset(pl, &enigme, NULL, NULL, NULL, NULL);
+		display_bilan(&bilan);
+
 		currentPhase = PHASE_REFLEX;
 		onclickReset(pl, &enigme, NULL, NULL, NULL, NULL);
 		displayMsg("REFLEXION", TRUE);
 		timeStart = SDL_GetTicks();
+		free(sigMsg->data);
+		free(sigMsg->data2);
 
 	}
 	if ( PHASE_ENCHERE & sigMsg->val) {
@@ -62,11 +73,22 @@ void gest_ihm(int signum, siginfo_t * info, void * vide) {
 		timeStart = SDL_GetTicks();
 	}
 	if ( FIN_TOUR & sigMsg->val) {
-		awaitLoadingTexte("ATTENTE TOUR", PHASE_REFLEX);
+//		awaitLoadingTexte("ATTENTE TOUR", PHASE_REFLEX);
+		parse_enigme(sigMsg->data, &enigme);
+		parse_bilan(sigMsg->data, &bilan);
+		cpyEnigme(&enigme, &initEnigme);
+		cpyPlateau(initPl, pl);
+		bind_enigme_plateau(pl, &enigme);
 		onclickReset(pl, &enigme, NULL, NULL, NULL, NULL);
 		display_bilan(&bilan);
+		free(sigMsg->data);
+		free(sigMsg->data2);
 	}
 	if ( FIN_SESSION & sigMsg->val) {
+		init_plateau(pl);
+		parse_plateau(sigMsg->data, pl);
+		cpyPlateau(pl, initPl);
+		free(sigMsg->data);
 		awaitLoadingTexte("attente de session ", PHASE_SESSION);
 	}
 	if ( UPDATE_L & sigMsg->val) {
@@ -465,7 +487,7 @@ void displayCoup(SDL_Texture *tmp_Tx, SDL_Rect srcR, SDL_Rect *emptyR) {
 	SDL_RenderCopy(ren, tmp_Tx, NULL, &srcR);
 }
 
-void phaseReflexion(){
+void phaseReflexion() {
 
 }
 
@@ -527,9 +549,6 @@ int ihm1() {
 	memset(move, 0, sizeof(move));
 	memset(coups, 0, sizeof(coups));
 	if (!quit) {
-		SDLS_affiche_image("assets/pl.png", ren, 0, 0);
-		display_plateau(pl);
-
 		awaitLoadingTexte("attente d'enigme ", PHASE_REFLEX);
 
 		display_enigme(&enigme);

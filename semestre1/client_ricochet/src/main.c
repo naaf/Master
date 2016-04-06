@@ -52,6 +52,7 @@ void traitement(char **tab, int size) {
 	union sigval valeur;
 	SigMsg *sigMsg = malloc(sizeof(SigMsg));
 	sigMsg->data = NULL;
+	sigMsg->data2 = NULL;
 	sigMsg->val = 0;
 	fprintf(stderr, "traite %s \n", tab[0]); //DEBUG
 	if (!strcmp(BIENVENUE, tab[0])) {
@@ -84,10 +85,8 @@ void traitement(char **tab, int size) {
 		}
 		if (etat & FIN_CONNEXION) {
 			etat |= PHASE_SESSION;
-			init_plateau(pl);
-			parse_plateau(tab[1], pl);
-			cpyPlateau(pl, initPl);
 			sigMsg->val = PHASE_SESSION;
+			sigMsg->data = strdup(tab[1]);
 			valeur.sival_ptr = sigMsg;
 			sigqueue(pid_main, SIG_IHM, valeur);
 		} else {
@@ -109,12 +108,9 @@ void traitement(char **tab, int size) {
 			return;
 		}
 		if (etat & PHASE_SESSION) {
-			parse_enigme(tab[1], &enigme);
-			parse_bilan(tab[2], &bilan);
-			cpyEnigme(&enigme, &initEnigme);
-			cpyPlateau(initPl, pl);
-			bind_enigme_plateau(pl, &enigme);
 			sigMsg->val = PHASE_REFLEX;
+			sigMsg->data = strdup(tab[1]);
+			sigMsg->data2 =strdup(tab[2]);
 			valeur.sival_ptr = sigMsg;
 			sigqueue(pid_main, SIG_IHM, valeur);
 		} else {
@@ -158,7 +154,7 @@ void traitement(char **tab, int size) {
 		}
 		user_t *u = getuser(myName, &bilan.list_users);
 		if (u == NULL) {
-			erreur("fatal erreur ", TRUE);
+			erreur("ERREUR je n'existe pas dans la liste des users ", TRUE);
 		}
 		u->nb_coups = valideCoups;
 		valideCoups = -1;
@@ -223,7 +219,7 @@ void traitement(char **tab, int size) {
 	} else if (!strcmp(BONNE, tab[0])) {
 		memset(msg_signal, 0, sizeof(msg_signal));
 		strcpy(msg_signal, "VOUS GAGNEZ");
-		sigMsg->val = FIN_TOUR | SIGALEMENT;
+		sigMsg->val =  SIGALEMENT;
 		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 

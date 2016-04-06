@@ -53,6 +53,7 @@ typedef struct _user {
 typedef struct{
 	int val;
 	char* data;
+	char* data2;
 }SigMsg;
 
 typedef struct {
