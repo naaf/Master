@@ -246,7 +246,9 @@ void traitement(char **tab, int size) {
 		sigqueue(pid_main, SIG_IHM, valeur);
 
 	} else if (!strcmp(FINRESO, tab[0])) {
-		sigMsg->val = FIN_TOUR;
+		sigMsg->val = SIGALEMENT;
+		memset(msg_signal, 0, sizeof(msg_signal));
+		strcpy(msg_signal, "FIN TOUR");
 		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(TROPLONG, tab[0])) {
@@ -352,7 +354,7 @@ int main(int argc, char** argv) {
 	/*--------Initialisation et gestions des signaux--------*/
 
 	action.sa_sigaction = gest_ihm;
-	action.sa_flags = SA_SIGINFO|SA_RESTART;
+	action.sa_flags = SA_SIGINFO | SA_RESTART;
 	sigfillset(&mask);
 	sigdelset(&mask, SIG_IHM);
 	sigdelset(&mask, SIGINT);

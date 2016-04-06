@@ -199,7 +199,7 @@ int awaitLoadingTexte(char* msg, int attente) {
 	int j = 0;
 	char *ps;
 	while (!(attenteTraitement & attente) && !quit) {
-		printf("boucle..");
+		printf("boucle..%d ,", attenteTraitement);
 		if (j == 0) {
 			ps = i == 0 ? "." : i == 1 ? "..." : "....";
 			msg_Tx = txt2Texture(ren, font, &color, ps);
@@ -465,6 +465,10 @@ void displayCoup(SDL_Texture *tmp_Tx, SDL_Rect srcR, SDL_Rect *emptyR) {
 	SDL_RenderCopy(ren, tmp_Tx, NULL, &srcR);
 }
 
+void phaseReflexion(){
+
+}
+
 int ihm1() {
 	SDL_Texture *tmp_Tx;
 	SDL_Event event;
@@ -540,7 +544,6 @@ int ihm1() {
 		TTF_CloseFont(font);
 		font = TTF_OpenFont("assets/dayrom.TTF", 20);
 	}
-	saveScreenshotBMP("testSave.png", win, ren);
 	SDL_StartTextInput();
 	int k, save_yUser;
 
@@ -568,7 +571,8 @@ int ihm1() {
 				}
 			}
 //			handle btn reset /*|| estContenu(&rectCoup, &event.motion)*/
-			if (estContenu(&rectReset, &event.motion)) {
+			if (estContenu(&rectReset, &event.motion)
+					|| estContenu(&rectCoup, &event.motion)) {
 				if (strlen(moves) > 0 || strlen(coups) > 0) {
 					onclickReset(initPl, &initEnigme, coups, moves, &rectCoup,
 							&rectEmpty);
@@ -597,15 +601,15 @@ int ihm1() {
 			}
 
 //			handle focus coups
-//			focusCoup = FALSE;
-//			if (estContenu(&rectCoup, &event.motion)) {
-//				SDLS_affiche_image("assets/focusCoups.png", ren, rectCoup.x,
-//						rectCoup.y + CASE);
-//				memset(coups, 0, sizeof(coups));
-//				lenCoups = 0;
-//				preFocusCoup = focusCoup = TRUE;
-//
-//			}
+			focusCoup = FALSE;
+			if (estContenu(&rectCoup, &event.motion)) {
+				SDLS_affiche_image("assets/focusCoups.png", ren, rectCoup.x,
+						rectCoup.y + CASE);
+				memset(coups, 0, sizeof(coups));
+				lenCoups = 0;
+				preFocusCoup = focusCoup = TRUE;
+
+			}
 //			handle select user
 			save_yUser = rectUser.y;
 			focusUser = FALSE;
@@ -673,11 +677,11 @@ int ihm1() {
 				}
 
 				// handle unfocus
-//				if (preFocusCoup && !focusCoup) {
-//					SDLS_affiche_image("assets/unfocusCoups.png", ren,
-//							rectCoup.x, rectCoup.y + CASE);
-//					preFocusCoup = focusCoup;
-//				}
+				if (preFocusCoup && !focusCoup) {
+					SDLS_affiche_image("assets/unfocusCoups.png", ren,
+							rectCoup.x, rectCoup.y + CASE);
+					preFocusCoup = focusCoup;
+				}
 				if (preFocusUser && !focusUser) {
 					rectUser.y = save_yUser + CASE * userSelected;
 					SDLS_affiche_image("assets/unfocusUser.png", ren,
@@ -689,21 +693,21 @@ int ihm1() {
 			}
 			break;
 			// handle entrer en dur le nb coups
-//		case SDL_TEXTINPUT:
-//			if (focusCoup
-//					&& ((currentPhase & PHASE_REFLEX)
-//							|| (currentPhase & PHASE_ENCHERE))) {
-//				int nb = estEntier(event.text.text);
-//				if (0 <= nb && nb <= 9) {
-//					if (lenCoups < 4) {
-//						coups[lenCoups++] = event.text.text[0];
-//						tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
-//						displayCoup(tmp_Tx, rectCoup, &rectEmpty);
-//						SDL_RenderPresent(ren);
-//					}
-//				}
-//			}
-//			break;
+		case SDL_TEXTINPUT:
+			if (focusCoup
+					&& ((currentPhase & PHASE_REFLEX)
+							|| (currentPhase & PHASE_ENCHERE))) {
+				int nb = estEntier(event.text.text);
+				if (0 <= nb && nb <= 9) {
+					if (lenCoups < 4) {
+						coups[lenCoups++] = event.text.text[0];
+						tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
+						displayCoup(tmp_Tx, rectCoup, &rectEmpty);
+						SDL_RenderPresent(ren);
+					}
+				}
+			}
+			break;
 		case SDL_QUIT:
 			quit = TRUE;
 			break;
