@@ -33,7 +33,6 @@ int valideCoups;
 int etat;
 bool_t quit;
 
-
 bilan_t bilan;
 
 int attenteTraitement;
@@ -51,6 +50,8 @@ void traitement(char **tab, int size) {
 	sigMsg->data = NULL;
 	sigMsg->data2 = NULL;
 	sigMsg->val = 0;
+	sigMsg->u = NULL;
+
 	fprintf(stderr, "traite %s \n", tab[0]); //DEBUG
 	if (!strcmp(BIENVENUE, tab[0])) {
 		etat |= FIN_CONNEXION;
@@ -62,8 +63,9 @@ void traitement(char **tab, int size) {
 			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
 			return;
 		}
-		adduser(tab[1], 0, &bilan.list_users);
+
 		sigMsg->val = UPDATE_L;
+		sigMsg->data = strdup(tab[1]);
 		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(DECONNEXION, tab[0])) {
@@ -71,8 +73,9 @@ void traitement(char **tab, int size) {
 			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
 			return;
 		}
-		removeuser(tab[1], &bilan.list_users);
+
 		sigMsg->val = UPDATE_L;
+		sigMsg->data2 = strdup(tab[1]);
 		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(SESSION, tab[0])) {
@@ -98,7 +101,7 @@ void traitement(char **tab, int size) {
 		parse_bilan(tab[1], &bilan);
 		sigMsg->val = FIN_SESSION;
 		valeur.sival_ptr = sigMsg;
-		sigqueue(pid_main, SIG_IHM, valeur); //TODO
+		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(TOUR, tab[0])) {
 		if (size < 3) {
 			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
@@ -107,7 +110,7 @@ void traitement(char **tab, int size) {
 		if (etat & PHASE_SESSION) {
 			sigMsg->val = PHASE_REFLEX;
 			sigMsg->data = strdup(tab[1]);
-			sigMsg->data2 =strdup(tab[2]);
+			sigMsg->data2 = strdup(tab[2]);
 			valeur.sival_ptr = sigMsg;
 			sigqueue(pid_main, SIG_IHM, valeur);
 		} else {
@@ -125,16 +128,12 @@ void traitement(char **tab, int size) {
 			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
 			return;
 		}
-		user_t *u = getuser(tab[1], &bilan.list_users);
-		if (u == NULL) {
-			fprintf(stderr, "user not exist %s \n", tab[1]);
-			return;
-		}
-		u->nb_coups = atoi(tab[2]);
 
 		memset(msg_signal, 0, sizeof(msg_signal));
 		sprintf(msg_signal, "%s trouve en %s coups", tab[1], tab[2]);
-		sigMsg->val = PHASE_ENCHERE | SIGALEMENT | UPDATE_L;
+		sigMsg->val = PHASE_ENCHERE | SIGALEMENT | UPDATE_U;
+		sigMsg->data = strdup(tab[1]);
+		sigMsg->data2 = strdup(tab[2]);
 		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(FINREFLEXION, tab[0])) {
@@ -149,15 +148,15 @@ void traitement(char **tab, int size) {
 			fprintf(stderr, "ERREUR protocol %s \n", tab[0]);
 			return;
 		}
-		user_t *u = getuser(myName, &bilan.list_users);
-		if (u == NULL) {
-			erreur("ERREUR je n'existe pas dans la liste des users ", TRUE);
-		}
-		u->nb_coups = valideCoups;
+		sigMsg->data = strdup(tab[1]);
+		memset(msg_signal, 0, sizeof(msg_signal));
+		fprintf(msg_signal, "%d", valideCoups);
+		sigMsg->data2 = strdup(msg_signal);
+
 		valideCoups = -1;
 		memset(msg_signal, 0, sizeof(msg_signal));
 		strcpy(msg_signal, "enchere Valide");
-		sigMsg->val = SIGALEMENT | UPDATE_L;
+		sigMsg->val = SIGALEMENT | UPDATE_U;
 		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 	} else if (!strcmp(ECHEC, tab[0])) {
@@ -174,13 +173,9 @@ void traitement(char **tab, int size) {
 		}
 		memset(msg_signal, 0, sizeof(msg_signal));
 		sprintf(msg_signal, "New enchere %s %s", tab[1], tab[2]);
-		user_t *u = getuser(tab[1], &bilan.list_users);
-		if (u == NULL) {
-			fprintf(stderr, "user not exist %s \n", tab[1]);
-			return;
-		}
-		u->nb_coups = atoi(tab[2]);
-		sigMsg->val = SIGALEMENT | UPDATE_L;
+		sigMsg->data = strdup(tab[1]);
+		sigMsg->data2 = strdup(tab[2]);
+		sigMsg->val = SIGALEMENT | UPDATE_U;
 		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 
@@ -216,7 +211,7 @@ void traitement(char **tab, int size) {
 	} else if (!strcmp(BONNE, tab[0])) {
 		memset(msg_signal, 0, sizeof(msg_signal));
 		strcpy(msg_signal, "VOUS GAGNEZ");
-		sigMsg->val =  SIGALEMENT;
+		sigMsg->val = SIGALEMENT;
 		valeur.sival_ptr = sigMsg;
 		sigqueue(pid_main, SIG_IHM, valeur);
 

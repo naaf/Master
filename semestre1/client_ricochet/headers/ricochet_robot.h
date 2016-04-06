@@ -15,7 +15,6 @@
 #define CNB_CP	0x0020 	/* type nb_coup*/
 #define CPLATE	0x0008 	/* type plateau*/
 
-
 #define CSMUR 0x0000	/* case sans mur, case libre*/
 #define CHMUR 0x0001	/* case mur haut*/
 #define CBMUR 0x0002 	/* case mur bas*/
@@ -29,8 +28,6 @@
 #define ROBOT_J 1
 #define ROBOT_R 2
 #define ROBOT_V 3
-
-
 
 #define ASSETS "assets/"
 #define EXT_IMG ".png"
@@ -50,11 +47,12 @@ typedef struct _user {
 
 } user_t;
 
-typedef struct{
+typedef struct {
 	int val;
 	char* data;
 	char* data2;
-}SigMsg;
+	user_t *u;
+} SigMsg;
 
 typedef struct {
 	int nb;
@@ -115,7 +113,7 @@ void parse_bilan(char* data, bilan_t* bil);
 char** string_to_arraystring(char* data, int* size, char separator);
 void free_table(char** tab, int size);
 
-int adduser(char* name,int score, list_user_t* list_users);
+int adduser(char* name, int score, list_user_t* list_users);
 int removeuser(char* name, list_user_t* list_users);
 user_t* getuser(char* name, list_user_t* list_users);
 void free_user(user_t *user);

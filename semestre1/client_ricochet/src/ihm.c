@@ -49,11 +49,11 @@ void gest_ihm(int signum, siginfo_t * info, void * vide) {
 	attenteTraitement |= sigMsg->val;
 
 	if ( PHASE_SESSION & sigMsg->val) {
-		pthread_mutex_lock(&mutex);
+//		pthread_mutex_lock(&mutex);
 		init_plateau(pl);
 		parse_plateau(sigMsg->data, pl);
 		cpyPlateau(pl, initPl);
-		pthread_mutex_unlock(&mutex);
+//		pthread_mutex_unlock(&mutex);
 
 		free(sigMsg->data);
 		display_plateau(pl);
@@ -62,13 +62,13 @@ void gest_ihm(int signum, siginfo_t * info, void * vide) {
 	if ( PHASE_REFLEX & sigMsg->val) {
 
 		printf("phase reflexion %s , %s\n", sigMsg->data, sigMsg->data2);
-		pthread_mutex_lock(&mutex);
+//		pthread_mutex_lock(&mutex);
 		parse_enigme(sigMsg->data, &enigme);
 		parse_bilan(sigMsg->data2, &bilan);
 		cpyEnigme(&enigme, &initEnigme);
 		cpyPlateau(initPl, pl);
 		bind_enigme_plateau(pl, &enigme);
-		pthread_mutex_unlock(&mutex);
+//		pthread_mutex_unlock(&mutex);
 
 		currentPhase = PHASE_REFLEX;
 
@@ -93,8 +93,29 @@ void gest_ihm(int signum, siginfo_t * info, void * vide) {
 	}
 
 	if ( UPDATE_L & sigMsg->val) {
+		if (sigMsg->data != NULL && sigMsg->u == NULL) {
+			adduser(sigMsg->data, 0, &bilan.list_users);
+			free(sigMsg->data);
+		}
+		if (sigMsg->data2 != NULL && sigMsg->u == NULL) {
+			removeuser(sigMsg->data2, &bilan.list_users);
+			free(sigMsg->data);
+		}
+
 		display_bilan(&bilan);
 	}
+	if ( UPDATE_U & sigMsg->val) {
+		user_t *u = getuser(sigMsg->data, &bilan.list_users);
+		if (u == NULL) {
+			fprintf(stderr, "user not exist %s \n", sigMsg->data);
+			return;
+		}
+		u->nb_coups = atoi(sigMsg->data2);
+		free(sigMsg->data);
+		free(sigMsg->data2);
+		display_bilan(&bilan);
+	}
+
 	if ( SIGALEMENT & sigMsg->val) {
 		displayMsg(msg_signal, FALSE);
 	}
@@ -129,11 +150,10 @@ void updateView() {
 
 void onclickReset(plateau_t srcPl, enigme_t *srcE, char* coups, char* moves) {
 
-	SDL_Texture *tmp_Tx;
-	pthread_mutex_lock(&mutex);
+//	pthread_mutex_lock(&mutex);
 	cpyEnigme(srcE, &enigme);
 	cpyPlateau(srcPl, pl);
-	pthread_mutex_unlock(&mutex);
+//	pthread_mutex_unlock(&mutex);
 	resetcoups();
 
 	display_plateau(pl);
@@ -327,7 +347,10 @@ void display_plateau(plateau_t pl) {
 
 		}
 	}
+
 	SDL_RenderPresent(ren);
+	g = 255;
+	SDL_SetRenderDrawColor(ren, r, g, b, a);
 }
 
 void display_enigme(enigme_t *e) {
