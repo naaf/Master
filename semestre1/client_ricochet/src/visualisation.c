@@ -41,7 +41,7 @@ void demarrerVisualisation(int rangUser) {
 	}
 
 	movesVisualisation = cur->solution;
-	onclickReset(initPl, &initEnigme, NULL, NULL, NULL, NULL);
+	onclickReset(initPl, &initEnigme, NULL, NULL);
 	offset = 0;
 }
 
@@ -78,6 +78,6 @@ void pasVisualisation() {
 void arreterVisualisation() {
 	cpyEnigme(&saveEnigme, &enigme);
 	cpyPlateau(savePlateau, pl);
-	onclickReset(savePlateau, &saveEnigme, NULL, NULL, NULL, NULL);
+	onclickReset(savePlateau, &saveEnigme, NULL, NULL);
 	modeVisualisation = FALSE;
 }

@@ -14,22 +14,24 @@
 
 static SDL_Texture *empty_Tx;
 extern pthread_t thread_com, thread_chat;
-extern plateau_t pl;
-extern enigme_t enigme;
 extern bilan_t bilan;
-extern plateau_t initPl;
-extern enigme_t initEnigme;
 extern int attenteTraitement;
 extern char msg_signal[128];
 extern int sc;
 extern bool_t moiJoue;
 extern char myName[256];
 extern int valideCoups;
-
-bool_t modeVisualisation;
 extern bool_t quit;
+
+plateau_t pl;
+enigme_t enigme;
+plateau_t initPl;
+enigme_t initEnigme;
+bool_t modeVisualisation;
 int currentPhase;
 Uint32 timeStart = 0;
+char moves[512];
+char coups[5];
 
 SDL_Renderer *ren;
 SDL_Window *win;
@@ -41,21 +43,29 @@ void gest_ihm(int signum, siginfo_t * info, void * vide) {
 	fprintf(stderr, "gest_ihm %d \n", sigMsg->val);
 
 	attenteTraitement |= sigMsg->val;
-	if ( SIGALEMENT & sigMsg->val) {
-		displayMsg(msg_signal, FALSE);
+
+	if ( PHASE_SESSION & sigMsg->val) {
+		printf("pl %s \n", sigMsg->data);
+		init_plateau(pl);
+		parse_plateau(sigMsg->data, pl);
+		cpyPlateau(pl, initPl);
+		free(sigMsg->data);
+		display_plateau(pl);
 	}
+
 	if ( PHASE_REFLEX & sigMsg->val) {
 
+		printf("phase reflexion %s , %s\n", sigMsg->data, sigMsg->data2);
 		parse_enigme(sigMsg->data, &enigme);
-		parse_bilan(sigMsg->data, &bilan);
+		parse_bilan(sigMsg->data2, &bilan);
 		cpyEnigme(&enigme, &initEnigme);
 		cpyPlateau(initPl, pl);
 		bind_enigme_plateau(pl, &enigme);
-		onclickReset(pl, &enigme, NULL, NULL, NULL, NULL);
-		display_bilan(&bilan);
 
 		currentPhase = PHASE_REFLEX;
-		onclickReset(pl, &enigme, NULL, NULL, NULL, NULL);
+
+		onclickReset(pl, &enigme, coups, moves);
+		display_bilan(&bilan);
 		displayMsg("REFLEXION", TRUE);
 		timeStart = SDL_GetTicks();
 		free(sigMsg->data);
@@ -72,27 +82,12 @@ void gest_ihm(int signum, siginfo_t * info, void * vide) {
 		displayMsg("SOLUTION", TRUE);
 		timeStart = SDL_GetTicks();
 	}
-	if ( FIN_TOUR & sigMsg->val) {
-//		awaitLoadingTexte("ATTENTE TOUR", PHASE_REFLEX);
-		parse_enigme(sigMsg->data, &enigme);
-		parse_bilan(sigMsg->data, &bilan);
-		cpyEnigme(&enigme, &initEnigme);
-		cpyPlateau(initPl, pl);
-		bind_enigme_plateau(pl, &enigme);
-		onclickReset(pl, &enigme, NULL, NULL, NULL, NULL);
-		display_bilan(&bilan);
-		free(sigMsg->data);
-		free(sigMsg->data2);
-	}
-	if ( FIN_SESSION & sigMsg->val) {
-		init_plateau(pl);
-		parse_plateau(sigMsg->data, pl);
-		cpyPlateau(pl, initPl);
-		free(sigMsg->data);
-		awaitLoadingTexte("attente de session ", PHASE_SESSION);
-	}
+
 	if ( UPDATE_L & sigMsg->val) {
 		display_bilan(&bilan);
+	}
+	if ( SIGALEMENT & sigMsg->val) {
+		displayMsg(msg_signal, FALSE);
 	}
 	free(sigMsg);
 }
@@ -104,9 +99,22 @@ int estEntier(char *s) {
 	return -1;
 }
 
-void onclickReset(plateau_t srcPl, enigme_t *srcE, char* coups, char* moves,
-		SDL_Rect *rectSrc, SDL_Rect *rectDst) {
+void updateView(SDL_Rect* rectCoup, SDL_Rect* rectEmpty) {
+	SDL_Texture *tmp_Tx;
 
+	display_plateau(pl);
+	display_enigme(&enigme);
+
+	tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
+	displayCoup(tmp_Tx, *rectCoup, rectEmpty);
+
+	SDL_RenderPresent(ren);
+}
+
+void onclickReset(plateau_t srcPl, enigme_t *srcE, char* coups, char* moves) {
+
+	SDL_Rect rectSrc = { 12 * CASE, 17 * CASE, CASE * 4, 64 };
+	SDL_Rect rectDst = { 0, 0, 64, 32 };
 	SDL_Texture *tmp_Tx;
 
 	cpyEnigme(srcE, &enigme);
@@ -117,7 +125,7 @@ void onclickReset(plateau_t srcPl, enigme_t *srcE, char* coups, char* moves,
 
 		sprintf(coups, "%d", 0);
 		tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
-		displayCoup(tmp_Tx, *rectSrc, rectDst);
+		displayCoup(tmp_Tx, rectSrc, &rectDst);
 	}
 
 	display_plateau(pl);
@@ -221,7 +229,6 @@ int awaitLoadingTexte(char* msg, int attente) {
 	int j = 0;
 	char *ps;
 	while (!(attenteTraitement & attente) && !quit) {
-		printf("boucle..%d ,", attenteTraitement);
 		if (j == 0) {
 			ps = i == 0 ? "." : i == 1 ? "..." : "....";
 			msg_Tx = txt2Texture(ren, font, &color, ps);
@@ -513,9 +520,7 @@ int ihm1() {
 	int userSelected;
 
 	char message[256];
-	char moves[512];
 	char move[3];
-	char coups[5];
 	char timeChaine[32];
 	int lenCoups;
 	char* labelCoup = "Veuillez entrer le nombre de coups :";
@@ -551,10 +556,7 @@ int ihm1() {
 	if (!quit) {
 		awaitLoadingTexte("attente d'enigme ", PHASE_REFLEX);
 
-		display_enigme(&enigme);
-		display_bilan(&bilan);
-
-// display labelCoup
+		// display labelCoup
 		tmp_Tx = txt2Texture(ren, font, &colorBlack, labelCoup);
 		SDL_QueryTexture(tmp_Tx, NULL, NULL, &rectLabelCoup.w,
 				&rectLabelCoup.h);
@@ -593,8 +595,7 @@ int ihm1() {
 			if (estContenu(&rectReset, &event.motion)
 					|| estContenu(&rectCoup, &event.motion)) {
 				if (strlen(moves) > 0 || strlen(coups) > 0) {
-					onclickReset(initPl, &initEnigme, coups, moves, &rectCoup,
-							&rectEmpty);
+					onclickReset(initPl, &initEnigme, coups, moves);
 				}
 			}
 //			handle btn arret simulation
@@ -683,13 +684,8 @@ int ihm1() {
 					strcat(moves, move);
 					sprintf(coups, "%d", ((int) (strlen(moves) / 2)));
 
-					//update view  TODO a ameliorer
-					display_plateau(pl);
-					display_enigme(&enigme);
-					tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
-					displayCoup(tmp_Tx, rectCoup, &rectEmpty);
-
-					SDL_RenderPresent(ren);
+					//update view
+					updateView(&rectCoup, &rectEmpty);
 
 					robotSelected = -1;
 					direction = NONE;

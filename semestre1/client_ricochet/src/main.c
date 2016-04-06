@@ -33,11 +33,8 @@ int valideCoups;
 int etat;
 bool_t quit;
 
-plateau_t pl;
-enigme_t enigme;
+
 bilan_t bilan;
-plateau_t initPl;
-enigme_t initEnigme;
 
 int attenteTraitement;
 char msg_signal[256];
