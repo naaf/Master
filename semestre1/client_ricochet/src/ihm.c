@@ -12,7 +12,6 @@
 #define MAP "assets/map.bmp"
 #define ACC "assets/accueil.png"
 
-static SDL_Texture *empty_Tx;
 extern pthread_t thread_com, thread_chat;
 extern bilan_t bilan;
 extern int attenteTraitement;
@@ -22,6 +21,8 @@ extern bool_t moiJoue;
 extern char myName[256];
 extern int valideCoups;
 extern bool_t quit;
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 plateau_t pl;
 enigme_t enigme;
@@ -33,10 +34,13 @@ Uint32 timeStart = 0;
 char moves[512];
 char coups[5];
 
+static SDL_Texture *empty_Tx;
 SDL_Renderer *ren;
 SDL_Window *win;
 TTF_Font *font;
 SDL_Color colorBlack = { 0, 0, 0, 0 };
+SDL_Rect rectCoup = { 12 * CASE, 17 * CASE, CASE * 4, 64 };
+SDL_Rect rectEmpty = { 0, 0, 64, 32 };
 
 void gest_ihm(int signum, siginfo_t * info, void * vide) {
 	SigMsg *sigMsg = (SigMsg*) info->si_value.sival_ptr;
@@ -45,10 +49,12 @@ void gest_ihm(int signum, siginfo_t * info, void * vide) {
 	attenteTraitement |= sigMsg->val;
 
 	if ( PHASE_SESSION & sigMsg->val) {
-		printf("pl %s \n", sigMsg->data);
+		pthread_mutex_lock(&mutex);
 		init_plateau(pl);
 		parse_plateau(sigMsg->data, pl);
 		cpyPlateau(pl, initPl);
+		pthread_mutex_unlock(&mutex);
+
 		free(sigMsg->data);
 		display_plateau(pl);
 	}
@@ -56,15 +62,18 @@ void gest_ihm(int signum, siginfo_t * info, void * vide) {
 	if ( PHASE_REFLEX & sigMsg->val) {
 
 		printf("phase reflexion %s , %s\n", sigMsg->data, sigMsg->data2);
+		pthread_mutex_lock(&mutex);
 		parse_enigme(sigMsg->data, &enigme);
 		parse_bilan(sigMsg->data2, &bilan);
 		cpyEnigme(&enigme, &initEnigme);
 		cpyPlateau(initPl, pl);
 		bind_enigme_plateau(pl, &enigme);
+		pthread_mutex_unlock(&mutex);
 
 		currentPhase = PHASE_REFLEX;
 
-		onclickReset(pl, &enigme, coups, moves);
+		resetcoups();
+		updateView();
 		display_bilan(&bilan);
 		displayMsg("REFLEXION", TRUE);
 		timeStart = SDL_GetTicks();
@@ -99,33 +108,35 @@ int estEntier(char *s) {
 	return -1;
 }
 
-void updateView(SDL_Rect* rectCoup, SDL_Rect* rectEmpty) {
+void resetcoups() {
+	memset(moves, 0, (int) sizeof(moves));
+	memset(coups, 0, (int) sizeof(moves));
+	sprintf(coups, "%d", 0);
+}
+
+void updateView() {
 	SDL_Texture *tmp_Tx;
 
 	display_plateau(pl);
 	display_enigme(&enigme);
 
 	tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
-	displayCoup(tmp_Tx, *rectCoup, rectEmpty);
+	displayCoup(tmp_Tx, rectCoup, &rectEmpty);
 
 	SDL_RenderPresent(ren);
 }
 
 void onclickReset(plateau_t srcPl, enigme_t *srcE, char* coups, char* moves) {
 
-	SDL_Rect rectSrc = { 12 * CASE, 17 * CASE, CASE * 4, 64 };
-	SDL_Rect rectDst = { 0, 0, 64, 32 };
 	SDL_Texture *tmp_Tx;
-
+	pthread_mutex_lock(&mutex);
 	cpyEnigme(srcE, &enigme);
 	cpyPlateau(srcPl, pl);
+	pthread_mutex_unlock(&mutex);
 	if (coups != NULL) {
-		memset(moves, 0, (int) sizeof(moves));
-		memset(coups, 0, (int) sizeof(moves));
-
-		sprintf(coups, "%d", 0);
+		resetcoups();
 		tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
-		displayCoup(tmp_Tx, rectSrc, &rectDst);
+		displayCoup(tmp_Tx, rectCoup, &rectEmpty);
 	}
 
 	display_plateau(pl);
@@ -182,7 +193,7 @@ void displayMsg(char* msg, bool_t phase) {
 	SDL_Color color = { 255, 0, 0, 0 };
 	SDL_Texture *msg_Tx;
 	SDL_Texture *emptyInput_Tx;
-	TTF_Font *font;
+	TTF_Font *font_msg;
 	SDL_Rect rectSrc = { 0, 0, 96, 32 };
 	SDL_Rect rectDst = { 0, 576, 224, 32 };
 	if (phase) {
@@ -195,17 +206,17 @@ void displayMsg(char* msg, bool_t phase) {
 		emptyInput_Tx = IMG_LoadTexture(ren, "assets/inputField.png");
 	}
 	if (phase)
-		font = TTF_OpenFont("assets/dayrom.TTF", 20);
+		font_msg = TTF_OpenFont("assets/dayrom.TTF", 20);
 	else
-		font = TTF_OpenFont("assets/dayrom.TTF", 16);
-	msg_Tx = txt2Texture(ren, font, &color, msg);
+		font_msg = TTF_OpenFont("assets/dayrom.TTF", 16);
+	msg_Tx = txt2Texture(ren, font_msg, &color, msg);
 	SDL_RenderCopy(ren, emptyInput_Tx, &rectSrc, &rectDst);
 	if (!phase)
 		rectDst.w -= 64;
 	SDL_QueryTexture(msg_Tx, NULL, NULL, &rectDst.w, &rectDst.h);
 	SDL_RenderCopy(ren, msg_Tx, NULL, &rectDst);
 	SDL_RenderPresent(ren);
-	TTF_CloseFont(font);
+	TTF_CloseFont(font_msg);
 }
 
 int awaitLoadingTexte(char* msg, int attente) {
@@ -505,8 +516,6 @@ int ihm1() {
 	SDL_Rect rectLabelCoup = { 10 * CASE, 16 * CASE + 16, 0, 0 };
 	SDL_Rect rectSendMoves = { 7 * CASE, 17 * CASE, 64, 64 };
 	SDL_Rect rectReset = { 10 * CASE, 17 * CASE, 64, 64 };
-	SDL_Rect rectCoup = { 12 * CASE, 17 * CASE, CASE * 4, 64 };
-	SDL_Rect rectEmpty = { 0, 0, 64, 32 };
 	SDL_Rect rectUser = { 512, 32, 256, 32 };
 	SDL_Rect rectTime = { 3 * CASE, 17 * CASE, 2 * CASE, 32 };
 	SDL_Rect rectVoir = { 19 * CASE, 17 * CASE, 64, 64 };
@@ -535,7 +544,7 @@ int ihm1() {
 	}
 
 	empty_Tx = IMG_LoadTexture(ren, "assets/inputField.png");
-	font = TTF_OpenFont("assets/dayrom.TTF", 12);
+	font = TTF_OpenFont("assets/dayrom.TTF", 14);
 
 	/*** Show **/
 
@@ -562,8 +571,7 @@ int ihm1() {
 				&rectLabelCoup.h);
 		SDL_RenderCopy(ren, tmp_Tx, NULL, &rectLabelCoup);
 		SDL_RenderPresent(ren);
-		TTF_CloseFont(font);
-		font = TTF_OpenFont("assets/dayrom.TTF", 20);
+
 	}
 	SDL_StartTextInput();
 	int k, save_yUser;
@@ -685,7 +693,7 @@ int ihm1() {
 					sprintf(coups, "%d", ((int) (strlen(moves) / 2)));
 
 					//update view
-					updateView(&rectCoup, &rectEmpty);
+					updateView();
 
 					robotSelected = -1;
 					direction = NONE;

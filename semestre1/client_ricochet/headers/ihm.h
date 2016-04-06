@@ -48,6 +48,7 @@ void displayAccueil();
 void displayCoup(SDL_Texture *tmp_Tx, SDL_Rect srcR, SDL_Rect *emptyR);
 void displayMsg(char* msg, bool_t phase);
 void erreur(char *msg, bool_t fin);
+void updateView();
 
 void onclickReset(plateau_t srcPl, enigme_t *srcE, char* coups, char* moves);
 #endif /* IHM_H_ */
