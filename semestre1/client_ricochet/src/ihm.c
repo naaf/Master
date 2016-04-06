@@ -37,7 +37,7 @@ char coups[5];
 static SDL_Texture *empty_Tx;
 SDL_Renderer *ren;
 SDL_Window *win;
-TTF_Font *font;
+
 SDL_Color colorBlack = { 0, 0, 0, 0 };
 SDL_Rect rectCoup = { 12 * CASE, 17 * CASE, CASE * 4, 64 };
 SDL_Rect rectEmpty = { 0, 0, 64, 32 };
@@ -116,13 +116,14 @@ void resetcoups() {
 
 void updateView() {
 	SDL_Texture *tmp_Tx;
-
+	TTF_Font *font;
+	font = TTF_OpenFont("assets/dayrom.TTF", 14);
 	display_plateau(pl);
 	display_enigme(&enigme);
 
 	tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
 	displayCoup(tmp_Tx, rectCoup, &rectEmpty);
-
+	TTF_CloseFont(font);
 	SDL_RenderPresent(ren);
 }
 
@@ -133,11 +134,7 @@ void onclickReset(plateau_t srcPl, enigme_t *srcE, char* coups, char* moves) {
 	cpyEnigme(srcE, &enigme);
 	cpyPlateau(srcPl, pl);
 	pthread_mutex_unlock(&mutex);
-	if (coups != NULL) {
-		resetcoups();
-		tmp_Tx = txt2Texture(ren, font, &colorBlack, coups);
-		displayCoup(tmp_Tx, rectCoup, &rectEmpty);
-	}
+	resetcoups();
 
 	display_plateau(pl);
 	display_enigme(&enigme);
@@ -535,7 +532,7 @@ int ihm1() {
 	char* labelCoup = "Veuillez entrer le nombre de coups :";
 
 	int x, y, i;
-
+	TTF_Font *font;
 	/*initialisation*/
 	SDLS_init(768, 608, &win, &ren);
 	if (TTF_Init() == -1) {
