@@ -86,6 +86,25 @@ void gest_ihm(int signum, siginfo_t * info, void * vide) {
 	}
 
 	if ( UPDATE_L & sigMsg->val) {
+		if (sigMsg->data != NULL && sigMsg->u == NULL) {
+			adduser(sigMsg->data, 0, &bilan.list_users);
+			free(sigMsg->data);
+		}
+		if (sigMsg->data2 != NULL && sigMsg->u == NULL) {
+			removeuser(sigMsg->data2, &bilan.list_users);
+			free(sigMsg->data2);
+		}
+		display_bilan(&bilan);
+	}
+	if ( UPDATE_U & sigMsg->val) {
+		if (sigMsg->data != NULL && sigMsg->data2 != NULL) {
+			user_t *u = getuser(sigMsg->data, &bilan.list_users);
+			if (u == NULL) {
+				printf(stderr, "erreur user not exist %s", sigMsg->data);
+			} else {
+				u->nb_coups = atoi(sigMsg->data2);
+			}
+		}
 		display_bilan(&bilan);
 	}
 	if ( SIGALEMENT & sigMsg->val) {
